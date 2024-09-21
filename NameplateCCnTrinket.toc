@@ -8,7 +8,10 @@
 
 ## X-Curse-Project-ID: 341119
 
-Embeds.xml
+#@no-lib-strip@
+embeds.xml
+#@end-no-lib-strip@
+
 Locale\Locale.xml
 SpellList.lua
 Main.lua

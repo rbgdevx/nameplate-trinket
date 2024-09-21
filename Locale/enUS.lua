@@ -23,7 +23,7 @@ L["root"] = "Root"
 L["knockback"] = "Knockback"
 L["disarm"] = "Disarm"
 L["Category Desc"] = "Taunt and Knockback category does not work right yet\n"
-L["selectnameplate"] = "|c00008000".."NameplateCCnTrinket".." |r ".."Please select a nameplate to test"
+L["selectnameplate"] = "|c00008000" .. "NameplateCCnTrinket" .. " |r " .. "Please select a nameplate to test"
 L["Test Desc"] = "First, select a nameplate and then press the Test button"
 L["Show Friendly Player Desc"] = "Also displayed on friendly targets"
 L["CC Common Icon Desc"] = "Marked by icon representing CC category"
@@ -63,7 +63,8 @@ L["CooldownSpiral"] = "Cooldown Spiral"
 L["CooldownSpiral Desc"] = "Toggle showing of the cooldown spiral"
 
 L["pSetting"] = "My Diminish"
-L["pSetting Desc"] = "Player Diminish Frame Setting(To use this feature, [Show Friendly Player] option in Settings must be turned on.)\n"
+L["pSetting Desc"] =
+  "Player Diminish Frame Setting(To use this feature, [Show Friendly Player] option in Settings must be turned on.)\n"
 L["Enable"] = true
 L["Enable Desc"] = true
 L["pxOfs"] = "X"

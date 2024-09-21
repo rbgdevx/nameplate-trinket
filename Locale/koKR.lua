@@ -1,5 +1,7 @@
 local L = LibStub("AceLocale-3.0"):NewLocale("NameplateCCnTrinket", "koKR")
-if not L then return end
+if not L then
+  return
+end
 
 L["Show Friendly Player"] = "우호적 플레이어 표시"
 L["CC Common Icon"] = "CC 공통 아이콘"
@@ -23,8 +25,9 @@ L["stun"] = "스턴"
 L["root"] = "묶기"
 L["knockback"] = "밀려남"
 L["disarm"] = "무장 해제"
-L["Category Desc"] = "도발과 밀려남 카테고리는 아직 올바르게 동작하지 않습니다.(나머지와 동작 방식이 다름)\n"
-L["selectnameplate"] = "|c00008000".."NameplateCCnTrinket".." |r ".."테스트 할 이름표를 선택하세요"
+L["Category Desc"] =
+  "도발과 밀려남 카테고리는 아직 올바르게 동작하지 않습니다.(나머지와 동작 방식이 다름)\n"
+L["selectnameplate"] = "|c00008000" .. "NameplateCCnTrinket" .. " |r " .. "테스트 할 이름표를 선택하세요"
 L["Test Desc"] = "먼저 이름표를 선택한 후 테스트 버튼을 누르세요"
 L["Show Friendly Player Desc"] = "우호적 플레이어에도 표시"
 L["CC Common Icon Desc"] = "CC 분류별 공통 아이콘으로 표시"
@@ -64,7 +67,8 @@ L["CooldownSpiral"] = "쿨다운 애니메이션"
 L["CooldownSpiral Desc"] = "쿨다운 애니메이션 표시"
 
 L["pSetting"] = "본인 점감"
-L["pSetting Desc"] = "본인 점감 프레임 설정(이 기능을 사용 하려면 Settings의 [우호적 플레이어 표시] 옵션이 켜져 있어야합니다.)\n"
+L["pSetting Desc"] =
+  "본인 점감 프레임 설정(이 기능을 사용 하려면 Settings의 [우호적 플레이어 표시] 옵션이 켜져 있어야합니다.)\n"
 L["Enable"] = "활성화"
 L["Enable Desc"] = "사용할지 여부"
 L["pxOfs"] = "X"
