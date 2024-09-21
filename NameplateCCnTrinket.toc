@@ -1,0 +1,15 @@
+﻿## Interface: 100205
+## Title: NameplateCCnTrinket
+## Author: Leming
+## Author-koKR: 래밍
+## Version: 100205-1
+## Notes: Show CC Diminish return and Trinket on Nameplate
+## SavedVariables: NameplateCCnTrinketSettings
+
+## X-Curse-Project-ID: 341119
+
+Embeds.xml
+Locale\Locale.xml
+SpellList.lua
+Main.lua
+Option.lua
