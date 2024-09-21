@@ -1,8 +1,8 @@
-﻿## Interface: 100205
+﻿## Interface: 110000, 110002
 ## Title: NameplateCCnTrinket
 ## Author: Leming
 ## Author-koKR: 래밍
-## Version: 100205-1
+## Version: 110002-1
 ## Notes: Show CC Diminish return and Trinket on Nameplate
 ## SavedVariables: NameplateCCnTrinketSettings
 

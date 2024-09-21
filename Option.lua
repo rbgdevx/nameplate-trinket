@@ -7,13 +7,13 @@ local GetAddOnMetadata = C_AddOns and C_AddOns.GetAddOnMetadata or GetAddOnMetad
 
 local function InChatTexture(val)
 	local icon_str
-	local _, _, tex = GetSpellInfo(val)
+	local tex = GetSpellInfo(val).iconID
 	if tex then
-		icon_str = "\124T" .. tex .. ":15:15:-5:-5\124t"
+		icon_str = "\124T"..tex..":15:15:-5:-5\124t"
 	else
 		icon_str = ""
 	end
-	return icon_str .. tostring(val)
+	return icon_str..tostring(val)
 end
 
 function NameplateCCnTrinket:Option()
@@ -28,24 +28,20 @@ function NameplateCCnTrinket:Option()
 				type = "description",
 				width = "normal",
 				name = "|cffffd700" .. L["Version"] .. "|r " .. GetAddOnMetadata("NameplateCCnTrinket", "Version"), -- .. "\n",
-				cmdHidden = true,
+				cmdHidden = true
 			},
 			drlistvers = {
 				order = 2,
 				type = "description",
 				width = "normal",
 				name = " |cffffd700" .. L["DRList-1.0"] .. "|r " .. drminor .. "\n",
-				cmdHidden = true,
+				cmdHidden = true
 			},
 			desc = {
 				order = 3,
 				type = "description",
-				name = "|cffffd700 "
-					.. L["Author"]
-					.. "|r "
-					.. GetAddOnMetadata("NameplateCCnTrinket", "Author")
-					.. "\n",
-				cmdHidden = true,
+				name = "|cffffd700 " .. L["Author"] .. "|r " .. GetAddOnMetadata("NameplateCCnTrinket", "Author") .. "\n",
+				cmdHidden = true
 			},
 			Description = {
 				type = "description",
@@ -66,12 +62,8 @@ function NameplateCCnTrinket:Option()
 				type = "group",
 				name = "Settings",
 				order = 5,
-				set = function(info, val)
-					self.Settings.profile.gSetting[info[#info]] = val
-				end,
-				get = function(info)
-					return self.Settings.profile.gSetting[info[#info]]
-				end,
+				set = function(info, val) self.Settings.profile.gSetting[info[#info]] = val end,
+				get = function(info) return self.Settings.profile.gSetting[info[#info]] end,
 				args = {
 					ShowFriendlyPlayer = {
 						type = "toggle",
@@ -199,18 +191,14 @@ function NameplateCCnTrinket:Option()
 						max = 1,
 						step = 0.01,
 					},
-				},
+				}
 			},
-			pSetting = {
+			pSetting ={
 				name = L["pSetting"],
 				type = "group",
 				order = 6,
-				set = function(info, val)
-					self.Settings.profile.pSetting[info[#info]] = val
-				end,
-				get = function(info)
-					return self.Settings.profile.pSetting[info[#info]]
-				end,
+				set = function(info, val) self.Settings.profile.pSetting[info[#info]] = val end,
+				get = function(info) return self.Settings.profile.pSetting[info[#info]] end,
 				args = {
 					Description = {
 						type = "description",
@@ -229,9 +217,7 @@ function NameplateCCnTrinket:Option()
 						name = L["pxOfs"],
 						desc = L["pxOfs Desc"],
 						type = "range",
-						disabled = function()
-							return not self.Settings.profile.pSetting.pEnable
-						end,
+						disabled = function() return not self.Settings.profile.pSetting.pEnable end,
 						width = "full",
 						order = 3,
 						isPercent = false,
@@ -243,9 +229,7 @@ function NameplateCCnTrinket:Option()
 						name = L["pyOfs"],
 						desc = L["pyOfs Desc"],
 						type = "range",
-						disabled = function()
-							return not self.Settings.profile.pSetting.pEnable
-						end,
+						disabled = function() return not self.Settings.profile.pSetting.pEnable end,
 						width = "full",
 						order = 4,
 						isPercent = false,
@@ -257,9 +241,7 @@ function NameplateCCnTrinket:Option()
 						name = L["pScale"],
 						desc = L["pScale Desc"],
 						type = "range",
-						disabled = function()
-							return not self.Settings.profile.pSetting.pEnable
-						end,
+						disabled = function() return not self.Settings.profile.pSetting.pEnable end,
 						width = "normal",
 						order = 5,
 						isPercent = true,
@@ -269,24 +251,18 @@ function NameplateCCnTrinket:Option()
 					},
 					attachFrame = {
 						type = "input",
-						disabled = function()
-							return not self.Settings.profile.pSetting.pEnable
-						end,
+						disabled = function() return not self.Settings.profile.pSetting.pEnable end,
 						order = 6,
 						name = L["attachFrame"],
 						desc = L["attachFrame Desc"],
 						set = function(_, val)
 							if _G[val] == nil then
-								DEFAULT_CHAT_FRAME:AddMessage(
-									"|c00008000" .. "NameplateCCnTrinket" .. " |r" .. val .. L["rightframe"]
-								)
+								DEFAULT_CHAT_FRAME:AddMessage("|c00008000".."NameplateCCnTrinket".." |r"..val..L["rightframe"])
 							else
 								self.Settings.profile.pSetting.attachFrame = val
 							end
 						end,
-						get = function()
-							return self.Settings.profile.pSetting.attachFrame
-						end,
+						get = function() return self.Settings.profile.pSetting.attachFrame end,
 					},
 				},
 			},
@@ -294,12 +270,8 @@ function NameplateCCnTrinket:Option()
 				name = L["Function"],
 				type = "group",
 				order = 7,
-				set = function(info, val)
-					self.Settings.profile.Func[info[#info]] = val
-				end,
-				get = function(info)
-					return self.Settings.profile.Func[info[#info]]
-				end,
+				set = function(info, val) self.Settings.profile.Func[info[#info]] = val end,
+				get = function(info) return self.Settings.profile.Func[info[#info]] end,
 				args = {
 					Interrupt = {
 						type = "toggle",
@@ -344,26 +316,22 @@ function NameplateCCnTrinket:Option()
 					},
 					ColorBasc = {
 						name = L["ColorBasc"],
-						desc = function()
+						desc = function ()
 							local color = self.Settings.profile.Func.ColorBasc
-							local R = "|cffff0000R|r:" .. color[1] * 0xff
-							local G = " |cff00ff00G|r:" .. color[2] * 0xff
-							local B = " |cff0000ffB|r:" .. color[3] * 0xff
+							local R = "|cffff0000R|r:"..color[1] * 0xff
+							local G = " |cff00ff00G|r:"..color[2] * 0xff
+							local B = " |cff0000ffB|r:"..color[3] * 0xff
 							--local A = " A:"..math_floor((color[4] * 100) + 0.5)
 
 							--return R..G..B..A
-							return R .. G .. B
+							return R..G..B
 						end,
 						type = "color",
 						width = "normal",
 						order = 7,
 						--hasAlpha = true,
-						set = function(info, ...)
-							self.Settings.profile.Func.ColorBasc = { ... }
-						end,
-						get = function()
-							return unpack(self.Settings.profile.Func.ColorBasc)
-						end,
+						set = function(info, ...) self.Settings.profile.Func.ColorBasc = {...} end,
+						get = function() return unpack(self.Settings.profile.Func.ColorBasc) end,
 					},
 					IconBorder = {
 						name = L["Func_IconBorder"],
@@ -391,9 +359,7 @@ function NameplateCCnTrinket:Option()
 						name = L["Func_FontScale"],
 						type = "range",
 						width = "normal",
-						disabled = function()
-							return not self.Settings.profile.Func.FontEnable
-						end,
+						disabled = function() return not self.Settings.profile.Func.FontEnable end,
 						order = 11,
 						isPercent = true,
 						min = 0.4,
@@ -404,9 +370,7 @@ function NameplateCCnTrinket:Option()
 						name = L["Func_FontPoint"],
 						type = "select",
 						width = "normal",
-						disabled = function()
-							return not self.Settings.profile.Func.FontEnable
-						end,
+						disabled = function() return not self.Settings.profile.Func.FontEnable end,
 						order = 12,
 						values = {
 							["TOP"] = L["TOP"],
@@ -437,12 +401,8 @@ function NameplateCCnTrinket:Option()
 				name = L["Category"],
 				type = "group",
 				order = 8,
-				set = function(info, val)
-					self.Settings.profile.Group[info[#info]] = val
-				end,
-				get = function(info)
-					return self.Settings.profile.Group[info[#info]]
-				end,
+				set = function(info, val) self.Settings.profile.Group[info[#info]] = val end,
+				get = function(info) return self.Settings.profile.Group[info[#info]] end,
 				args = {
 					Description = {
 						type = "description",
@@ -514,11 +474,7 @@ function NameplateCCnTrinket:Option()
 					},
 					tauntCommon = {
 						type = "input",
-						disabled = function()
-							return not (
-								self.Settings.profile.gSetting.CCCommonIcon and self.Settings.profile.Group.taunt
-							)
-						end,
+						disabled = function() return not (self.Settings.profile.gSetting.CCCommonIcon and self.Settings.profile.Group.taunt) end,
 						order = 11,
 						name = L["taunt name"],
 						desc = L["taunt Common Desc"],
@@ -527,22 +483,14 @@ function NameplateCCnTrinket:Option()
 							if GetSpellInfo(num) then
 								self.Settings.profile.Group.tauntCommon = num
 							else
-								DEFAULT_CHAT_FRAME:AddMessage(
-									"|c00008000" .. "NameplateCCnTrinket" .. " |r" .. val .. L["rightcommon"]
-								)
+								DEFAULT_CHAT_FRAME:AddMessage("|c00008000".."NameplateCCnTrinket".." |r"..val..L["rightcommon"])
 							end
 						end,
-						get = function()
-							return InChatTexture(self.Settings.profile.Group.tauntCommon)
-						end,
+						get = function() return InChatTexture(self.Settings.profile.Group.tauntCommon) end,
 					},
 					incapacitateCommon = {
 						type = "input",
-						disabled = function()
-							return not (
-								self.Settings.profile.gSetting.CCCommonIcon and self.Settings.profile.Group.incapacitate
-							)
-						end,
+						disabled = function() return not (self.Settings.profile.gSetting.CCCommonIcon and self.Settings.profile.Group.incapacitate) end,
 						order = 12,
 						name = L["incapacitate name"],
 						desc = L["incapacitate Common Desc"],
@@ -551,22 +499,14 @@ function NameplateCCnTrinket:Option()
 							if GetSpellInfo(num) then
 								self.Settings.profile.Group.incapacitateCommon = num
 							else
-								DEFAULT_CHAT_FRAME:AddMessage(
-									"|c00008000" .. "NameplateCCnTrinket" .. " |r" .. val .. L["rightcommon"]
-								)
+								DEFAULT_CHAT_FRAME:AddMessage("|c00008000".."NameplateCCnTrinket".." |r"..val..L["rightcommon"])
 							end
 						end,
-						get = function()
-							return InChatTexture(self.Settings.profile.Group.incapacitateCommon)
-						end,
+						get = function() return InChatTexture(self.Settings.profile.Group.incapacitateCommon) end,
 					},
 					silenceCommon = {
 						type = "input",
-						disabled = function()
-							return not (
-								self.Settings.profile.gSetting.CCCommonIcon and self.Settings.profile.Group.silence
-							)
-						end,
+						disabled = function() return not (self.Settings.profile.gSetting.CCCommonIcon and self.Settings.profile.Group.silence) end,
 						order = 13,
 						name = L["silence name"],
 						desc = L["silence Common Desc"],
@@ -575,22 +515,14 @@ function NameplateCCnTrinket:Option()
 							if GetSpellInfo(num) then
 								self.Settings.profile.Group.silenceCommon = num
 							else
-								DEFAULT_CHAT_FRAME:AddMessage(
-									"|c00008000" .. "NameplateCCnTrinket" .. " |r" .. val .. L["rightcommon"]
-								)
+								DEFAULT_CHAT_FRAME:AddMessage("|c00008000".."NameplateCCnTrinket".." |r"..val..L["rightcommon"])
 							end
 						end,
-						get = function()
-							return InChatTexture(self.Settings.profile.Group.silenceCommon)
-						end,
+						get = function() return InChatTexture(self.Settings.profile.Group.silenceCommon) end,
 					},
 					disorientCommon = {
 						type = "input",
-						disabled = function()
-							return not (
-								self.Settings.profile.gSetting.CCCommonIcon and self.Settings.profile.Group.disorient
-							)
-						end,
+						disabled = function() return not (self.Settings.profile.gSetting.CCCommonIcon and self.Settings.profile.Group.disorient) end,
 						order = 14,
 						name = L["disorient name"],
 						desc = L["disorient Common Desc"],
@@ -599,22 +531,14 @@ function NameplateCCnTrinket:Option()
 							if GetSpellInfo(num) then
 								self.Settings.profile.Group.disorientCommon = num
 							else
-								DEFAULT_CHAT_FRAME:AddMessage(
-									"|c00008000" .. "NameplateCCnTrinket" .. " |r" .. val .. L["rightcommon"]
-								)
+								DEFAULT_CHAT_FRAME:AddMessage("|c00008000".."NameplateCCnTrinket".." |r"..val..L["rightcommon"])
 							end
 						end,
-						get = function()
-							return InChatTexture(self.Settings.profile.Group.disorientCommon)
-						end,
+						get = function() return InChatTexture(self.Settings.profile.Group.disorientCommon) end,
 					},
 					stunCommon = {
 						type = "input",
-						disabled = function()
-							return not (
-								self.Settings.profile.gSetting.CCCommonIcon and self.Settings.profile.Group.stun
-							)
-						end,
+						disabled = function() return not (self.Settings.profile.gSetting.CCCommonIcon and self.Settings.profile.Group.stun) end,
 						order = 15,
 						name = L["stun name"],
 						desc = L["stun Common Desc"],
@@ -623,22 +547,14 @@ function NameplateCCnTrinket:Option()
 							if GetSpellInfo(num) then
 								self.Settings.profile.Group.stunCommon = num
 							else
-								DEFAULT_CHAT_FRAME:AddMessage(
-									"|c00008000" .. "NameplateCCnTrinket" .. " |r" .. val .. L["rightcommon"]
-								)
+								DEFAULT_CHAT_FRAME:AddMessage("|c00008000".."NameplateCCnTrinket".." |r"..val..L["rightcommon"])
 							end
 						end,
-						get = function()
-							return InChatTexture(self.Settings.profile.Group.stunCommon)
-						end,
+						get = function() return InChatTexture(self.Settings.profile.Group.stunCommon) end,
 					},
 					rootCommon = {
 						type = "input",
-						disabled = function()
-							return not (
-								self.Settings.profile.gSetting.CCCommonIcon and self.Settings.profile.Group.root
-							)
-						end,
+						disabled = function() return not (self.Settings.profile.gSetting.CCCommonIcon and self.Settings.profile.Group.root) end,
 						order = 16,
 						name = L["root name"],
 						desc = L["root Common Desc"],
@@ -647,22 +563,14 @@ function NameplateCCnTrinket:Option()
 							if GetSpellInfo(num) then
 								self.Settings.profile.Group.rootCommon = num
 							else
-								DEFAULT_CHAT_FRAME:AddMessage(
-									"|c00008000" .. "NameplateCCnTrinket" .. " |r" .. val .. L["rightcommon"]
-								)
+								DEFAULT_CHAT_FRAME:AddMessage("|c00008000".."NameplateCCnTrinket".." |r"..val..L["rightcommon"])
 							end
 						end,
-						get = function()
-							return InChatTexture(self.Settings.profile.Group.rootCommon)
-						end,
+						get = function() return InChatTexture(self.Settings.profile.Group.rootCommon) end,
 					},
 					knockbackCommon = {
 						type = "input",
-						disabled = function()
-							return not (
-								self.Settings.profile.gSetting.CCCommonIcon and self.Settings.profile.Group.knockback
-							)
-						end,
+						disabled = function() return not (self.Settings.profile.gSetting.CCCommonIcon and self.Settings.profile.Group.knockback) end,
 						order = 17,
 						name = L["knockback name"],
 						desc = L["knockback Common Desc"],
@@ -671,22 +579,14 @@ function NameplateCCnTrinket:Option()
 							if GetSpellInfo(num) then
 								self.Settings.profile.Group.knockbackCommon = num
 							else
-								DEFAULT_CHAT_FRAME:AddMessage(
-									"|c00008000" .. "NameplateCCnTrinket" .. " |r" .. val .. L["rightcommon"]
-								)
+								DEFAULT_CHAT_FRAME:AddMessage("|c00008000".."NameplateCCnTrinket".." |r"..val..L["rightcommon"])
 							end
 						end,
-						get = function()
-							return InChatTexture(self.Settings.profile.Group.knockbackCommon)
-						end,
+						get = function() return InChatTexture(self.Settings.profile.Group.knockbackCommon) end,
 					},
 					disarmCommon = {
 						type = "input",
-						disabled = function()
-							return not (
-								self.Settings.profile.gSetting.CCCommonIcon and self.Settings.profile.Group.disarm
-							)
-						end,
+						disabled = function() return not (self.Settings.profile.gSetting.CCCommonIcon and self.Settings.profile.Group.disarm) end,
 						order = 18,
 						name = L["disarm name"],
 						desc = L["disarm Common Desc"],
@@ -695,14 +595,10 @@ function NameplateCCnTrinket:Option()
 							if GetSpellInfo(num) then
 								self.Settings.profile.Group.disarmCommon = num
 							else
-								DEFAULT_CHAT_FRAME:AddMessage(
-									"|c00008000" .. "NameplateCCnTrinket" .. " |r" .. val .. L["rightcommon"]
-								)
+								DEFAULT_CHAT_FRAME:AddMessage("|c00008000".."NameplateCCnTrinket".." |r"..val..L["rightcommon"])
 							end
 						end,
-						get = function()
-							return InChatTexture(self.Settings.profile.Group.disarmCommon)
-						end,
+						get = function() return InChatTexture(self.Settings.profile.Group.disarmCommon) end,
 					},
 					dummyCommon = {
 						name = "",
@@ -712,69 +608,57 @@ function NameplateCCnTrinket:Option()
 					},
 					ColorFull = {
 						name = L["ColorFull"],
-						desc = function()
+						desc = function ()
 							local color = self.Settings.profile.Group.ColorFull
-							local R = "|cffff0000R|r:" .. color[1] * 0xff
-							local G = " |cff00ff00G|r:" .. color[2] * 0xff
-							local B = " |cff0000ffB|r:" .. color[3] * 0xff
-							local A = " A:" .. math_floor((color[4] * 100) + 0.5)
+							local R = "|cffff0000R|r:"..color[1] * 0xff
+							local G = " |cff00ff00G|r:"..color[2] * 0xff
+							local B = " |cff0000ffB|r:"..color[3] * 0xff
+							local A = " A:"..math_floor((color[4] * 100) + 0.5)
 
-							return R .. G .. B .. A
+							return R..G..B..A
 						end,
 						type = "color",
 						width = "normal",
 						order = 41,
 						hasAlpha = true,
-						set = function(info, ...)
-							self.Settings.profile.Group.ColorFull = { ... }
-						end,
-						get = function()
-							return unpack(self.Settings.profile.Group.ColorFull)
-						end,
+						set = function(info, ...) self.Settings.profile.Group.ColorFull = {...} end,
+						get = function() return unpack(self.Settings.profile.Group.ColorFull) end,
 					},
 					ColorHalf = {
 						name = L["ColorHalf"],
-						desc = function()
+						desc = function ()
 							local color = self.Settings.profile.Group.ColorHalf
-							local R = "|cffff0000R|r:" .. color[1] * 0xff
-							local G = " |cff00ff00G|r:" .. color[2] * 0xff
-							local B = " |cff0000ffB|r:" .. color[3] * 0xff
-							local A = " A:" .. math_floor((color[4] * 100) + 0.5)
+							local R = "|cffff0000R|r:"..color[1] * 0xff
+							local G = " |cff00ff00G|r:"..color[2] * 0xff
+							local B = " |cff0000ffB|r:"..color[3] * 0xff
+							local A = " A:"..math_floor((color[4] * 100) + 0.5)
 
-							return R .. G .. B .. A
+							return R..G..B..A
 						end,
 						type = "color",
 						width = "normal",
 						order = 42,
 						hasAlpha = true,
-						set = function(info, ...)
-							self.Settings.profile.Group.ColorHalf = { ... }
-						end,
-						get = function()
-							return unpack(self.Settings.profile.Group.ColorHalf)
-						end,
+						set = function(info, ...) self.Settings.profile.Group.ColorHalf = {...} end,
+						get = function() return unpack(self.Settings.profile.Group.ColorHalf) end,
 					},
 					ColorQuat = {
 						name = L["ColorQuat"],
-						desc = function()
+						desc = function ()
 							local color = self.Settings.profile.Group.ColorQuat
-							local R = "|cffff0000R|r:" .. color[1] * 0xff
-							local G = " |cff00ff00G|r:" .. color[2] * 0xff
-							local B = " |cff0000ffB|r:" .. color[3] * 0xff
-							local A = " A:" .. math_floor((color[4] * 100) + 0.5)
+							local R = "|cffff0000R|r:"..color[1] * 0xff
+							local G = " |cff00ff00G|r:"..color[2] * 0xff
+							local B = " |cff0000ffB|r:"..color[3] * 0xff
+							local A = " A:"..math_floor((color[4] * 100) + 0.5)
 
-							return R .. G .. B .. A
+							return R..G..B..A
 						end,
 						type = "color",
 						width = "normal",
 						order = 43,
 						hasAlpha = true,
-						set = function(info, ...)
-							self.Settings.profile.Group.ColorQuat = { ... }
-						end,
-						get = function()
-							return unpack(self.Settings.profile.Group.ColorQuat)
-						end,
+						set = function(info, ...) self.Settings.profile.Group.ColorQuat = {...} end,
+						get = function() return unpack(self.Settings.profile.Group.ColorQuat) end,
 					},
 				},
 			},
@@ -782,12 +666,8 @@ function NameplateCCnTrinket:Option()
 				name = "CC Highlight",
 				type = "group",
 				order = 9,
-				set = function(info, val)
-					self.Settings.profile.CCHL[info[#info]] = val
-				end,
-				get = function(info)
-					return self.Settings.profile.CCHL[info[#info]]
-				end,
+				set = function(info, val) self.Settings.profile.CCHL[info[#info]] = val end,
+				get = function(info) return self.Settings.profile.CCHL[info[#info]] end,
 				args = {
 					Description = {
 						type = "description",
@@ -804,9 +684,7 @@ function NameplateCCnTrinket:Option()
 					Style = {
 						name = L["CCHL Style"],
 						type = "select",
-						disabled = function()
-							return not self.Settings.profile.CCHL.Enable
-						end,
+						disabled = function() return not self.Settings.profile.CCHL.Enable end,
 						width = "normal",
 						order = 3,
 						values = {
@@ -824,9 +702,7 @@ function NameplateCCnTrinket:Option()
 					pixellength = {
 						name = L["CCHL pixellength"],
 						type = "range",
-						disabled = function()
-							return not self.Settings.profile.CCHL.Enable
-						end,
+						disabled = function() return not self.Settings.profile.CCHL.Enable end,
 						hidden = function(info)
 							if self.Settings.profile.CCHL.Style == "PixelGlow" then
 								return false
@@ -843,9 +719,7 @@ function NameplateCCnTrinket:Option()
 					pixelth = {
 						name = L["CCHL pixelth"],
 						type = "range",
-						disabled = function()
-							return not self.Settings.profile.CCHL.Enable
-						end,
+						disabled = function() return not self.Settings.profile.CCHL.Enable end,
 						hidden = function(info)
 							if self.Settings.profile.CCHL.Style == "PixelGlow" then
 								return false
@@ -862,9 +736,7 @@ function NameplateCCnTrinket:Option()
 					autoscale = {
 						name = L["CCHL autoscale"],
 						type = "range",
-						disabled = function()
-							return not self.Settings.profile.CCHL.Enable
-						end,
+						disabled = function() return not self.Settings.profile.CCHL.Enable end,
 						hidden = function(info)
 							if self.Settings.profile.CCHL.Style == "AutoCastGlow" then
 								return false
@@ -880,7 +752,7 @@ function NameplateCCnTrinket:Option()
 					},
 				},
 			},
-		},
+		}
 	}
 
 	LibStub("AceConfig-3.0"):RegisterOptionsTable("NameplateCCnTrinket", AceConfig)

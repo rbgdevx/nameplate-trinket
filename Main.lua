@@ -2,13 +2,15 @@ local _, Data = ...
 local NameplateCCnTrinket = LibStub("AceAddon-3.0"):NewAddon("NameplateCCnTrinket", "AceConsole-3.0", "AceEvent-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale("NameplateCCnTrinket")
 local LCG = LibStub("LibCustomGlow-1.0")
+
 local DRL = LibStub("DRList-1.0")
 local LHT = LibStub("LibHealerTracker-1.0")
 
 local _G, pairs, select, band, floor, strfind, unpack = _G, pairs, select, bit.band, math.floor, string.find, unpack
 local CreateFrame = CreateFrame
-local GetSpellInfo, GetTime, GetPlayerInfoByGUID = GetSpellInfo, GetTime, GetPlayerInfoByGUID
-local UnitAura, UnitGUID = UnitAura, UnitGUID
+local GetTime, GetPlayerInfoByGUID = GetTime, GetPlayerInfoByGUID
+
+local UnitAura, UnitGUID = C_UnitAuras.GetAuraDataByIndex, UnitGUID
 local CombatLogGetCurrentEventInfo = CombatLogGetCurrentEventInfo
 local GetCVar, GetNamePlateForUnit = C_CVar.GetCVar, C_NamePlate.GetNamePlateForUnit
 local COMBATLOG_OBJECT_REACTION_HOSTILE, COMBATLOG_OBJECT_REACTION_MASK =
@@ -120,7 +122,7 @@ function NameplateCCnTrinket:OnInitialize()
 
 	for str in pairs(Data.n_MAP) do
 		for sp, tm in pairs(Data.n_MAP[str]) do
-			if select(1, C_Spell.GetSpellName(sp)) then
+			if C_Spell.GetSpellName(sp) then
 				if str == "Dispel" then
 					CDDTimeCache[sp] = tm
 				elseif str == "Reset" then
@@ -128,7 +130,7 @@ function NameplateCCnTrinket:OnInitialize()
 				else
 					CDTimeCache[sp] = tm
 				end
-				CDTextureCache[sp] = select(3, C_Spell.GetSpellTexture(sp))
+				CDTextureCache[sp] = C_Spell.GetSpellTexture(sp)
 			else
 				DEFAULT_CHAT_FRAME:AddMessage("|c00008000NameplateCCnTrinket|r n_MAP[" .. str .. "] " .. sp)
 			end
@@ -138,7 +140,7 @@ function NameplateCCnTrinket:OnInitialize()
 	--  CDTextureCache[196029] = "Interface\\Icons\\Ability_bossdarkvindicator_auraofcontempt" -- Relentless
 
 	for _, id in pairs(CommonIcon) do
-		if not select(1, C_Spell.GetSpellName(id)) then
+		if not C_Spell.GetSpellName(id) then
 			DEFAULT_CHAT_FRAME:AddMessage("|c00008000NameplateCCnTrinket|r [CommonIcon] " .. id)
 		end
 	end
@@ -170,13 +172,13 @@ local function GetAuraDuration(unitID, spellID)
 	end
 
 	for i = 1, 40 do
-		local _, _, _, _, duration, expTime, _, _, _, id = UnitAura(unitID, i, "HARMFUL")
-		if not id then
+		local aura = UnitAura(unitID, i, "HARMFUL")
+		if not aura or not aura.spellId then
 			return
 		end -- no more debuffs
 
-		if spellID == id then
-			return duration, expTime
+		if spellID == aura.spellId then
+			return aura.duration, aura.expirationTime
 		end
 	end
 end
@@ -319,9 +321,9 @@ local function CreateDiminishFrame(tempGUID, tempSpellID, isApplied, isTest)
 		elseif cat == "disarm" then
 			dat = profile.Group.disarmCommon
 		end
-		frame.Texture:SetTexture(select(3, C_Spell.GetSpellTexture(dat)))
+		frame.Texture:SetTexture(C_Spell.GetSpellTexture(dat))
 	else
-		frame.Texture:SetTexture(select(3, C_Spell.GetSpellTexture(SetTextureChange(tempSpellID))))
+		frame.Texture:SetTexture(C_Spell.GetSpellTexture(SetTextureChange(tempSpellID)))
 	end
 
 	frame.c:SetCooldown(GetTime(), fTime + DR_TIME)
