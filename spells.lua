@@ -1,6 +1,6 @@
-﻿local _, Data = ...
+﻿local _, NS = ...
 
-Data.n_MAP = {
+NS.n_MAP = {
   ["Trinket"] = {
     --	[195710]	= 180,	-- Honorable Medallion
     --	[208683]	= 120,	-- Gladiator's Medallion
@@ -8,16 +8,16 @@ Data.n_MAP = {
     --	[196029]	= -1,	-- Relentless
 
     [42292] = 120, -- Item Trinket PvP Trinket Account attribution (Require Texture setting)
-    [336126] = 120, -- Item Trinket Gladiator's Medallion
+    [336126] = 120, -- Item Trinket Gladiator's Medallion -- DEFAULT
     [336139] = 60, -- Item Trinket Adapted
     [336128] = -1, -- Item Trinket Relentless
     --	[283167]	= 60,	-- Item Trinket Adapted
-    --	[363117]    = 180,  -- Item Trinket 9.2 Gladiator's Resolve 우주적 검투사의 치밀한 결의 발동효과ID(362699)
-    --	[363121]    = 12,   -- Item Trinket 9.2 Gladiator's Echoing Resolve 우주적 검투사의 메아리치는 결의
-    --	[362699]    = 12,   -- Item Trinket 9.2 Gladiator's Echoing Resolve 우주적 검투사의 메아리치는 결의
+    --	[363117]    = 180,  -- Item Trinket 9.2 Gladiator's Resolve ID(362699)
+    --	[363121]    = 12,   -- Item Trinket 9.2 Gladiator's Echoing Resolve
+    --	[362699]    = 12,   -- Item Trinket 9.2 Gladiator's Echoing Resolve
   },
   ["RST_Racial"] = {
-    [59752] = 180, -- Every Man for Himself (Human)
+    [59752] = 180, -- Every Man for Himself (Human) -- DEFAULT
     [7744] = 120, -- Will of the Forsaken (Undead(Scourge))
     [65116] = 120, -- Stoneform (Dwarf)
     [273104] = 120, -- Fireblood (Dark Iron Dwarf) 265221(x)
@@ -89,7 +89,7 @@ Data.n_MAP = {
 
     [47528] = 15, -- Mind Freeze (Death Knight All)
 
-    [6552] = 15, -- Pummel (Warrior All)
+    [6552] = 15, -- Pummel (Warrior All) -- DEFAULT
 
     [119910] = 24, -- Spell Lock (Warlock Fel hound)
     [132409] = 24, -- Spell Lock (Warlock Fel hound Grimoire of Sacrifice)
@@ -102,7 +102,7 @@ Data.n_MAP = {
     [147362] = 24, -- Counter Shot (Hunter Beast Mastery, Marksmanship)
   },
   ["Dispel"] = {
-    [527] = 8, -- Purify (Priest Discipline, Holy)
+    [527] = 8, -- Purify (Priest Discipline, Holy) -- DEFAULT
     [213634] = 8, -- Purify Disease (Priest Shadow)
 
     [4987] = 8, -- Cleanse (Paladin Holy)
@@ -141,10 +141,10 @@ Data.n_MAP = {
     --	[208683]	= 30,	-- Gladiator's Medallion
     --	[195901]	= 30,  	-- Adapted
     [42292] = 30, -- Item Trinket PvP Trinket Account attribution (Require Texture setting)
-    [336126] = 30, -- Item Trinket Gladiator's Medallion
+    [336126] = 30, -- Item Trinket Gladiator's Medallion -- DEFAULT
     [336139] = 30, -- Item Trinket Adapted
 
-    [59752] = 90, -- Every Man for Himself (Human)
+    [59752] = 90, -- Will to Survive (Human) -- DEFAULT
     [7744] = 30, -- Will of the Forsaken (Undead(Scourge))
     [65116] = 30, -- Stoneform (Dwarf)
     [273104] = 30, -- Fireblood (Dark Iron Dwarf) 265221(x)
