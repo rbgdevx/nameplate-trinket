@@ -26,7 +26,6 @@ local COMBATLOG_OBJECT_REACTION_MASK = COMBATLOG_OBJECT_REACTION_MASK
 local NameplateTrinket = NS.NameplateTrinket
 local NameplateTrinketFrame = NS.NameplateTrinket.frame
 
-local LCG = LibStub("LibCustomGlow-1.0")
 local DRL = LibStub("DRList-1.0")
 local LHT = LibStub("LibHealerTracker-1.0")
 
@@ -34,7 +33,6 @@ local DR_TIME = DRL.resetTimes.retail["default"]
 local getUpdate = 0
 local npUnitID = {}
 local CDTimeCache = {}
-local CDDTimeCache = {}
 local RSTimeCache = {}
 local CDTextureCache = {}
 local gradual = {}
@@ -140,6 +138,7 @@ local function CreateDiminishFrame(tempGUID, tempSpellID, isApplied, isTest)
   if not gradual[tempGUID] then
     gradual[tempGUID] = {}
   end
+
   if not gradual[tempGUID][cat] then
     CreateBorderTexture(cat, tempGUID)
     gradual[tempGUID][cat] = _G["NCT" .. cat .. tempGUID]
@@ -178,46 +177,15 @@ local function CreateDiminishFrame(tempGUID, tempSpellID, isApplied, isTest)
     fTime = 0
   end
 
-  local mask_rgb = NS.db.global.Group.ColorFull
+  local mask_rgb = { 0, 1, 0, 0.6 }
   if frame.c.count == 2 then
-    mask_rgb = NS.db.global.Group.ColorHalf
+    mask_rgb = { 1, 1, 0, 0.6 }
   elseif frame.c.count > 2 then
-    mask_rgb = NS.db.global.Group.ColorQuat
+    mask_rgb = { 1, 0, 0, 0.6 }
   end
 
-  if NS.db.global.CCHL.Enable then
-    if isApplied then
-      NameplateTrinket:ShowGlow(gradual, tempGUID, cat, mask_rgb)
-    else
-      NameplateTrinket:HideGlow(gradual, tempGUID, cat)
-    end
-  end
-
-  frame.border:SetVertexColor(mask_rgb[1], mask_rgb[2], mask_rgb[3])
-  if NS.db.global.gSetting.CCCommonIcon then
-    local dat
-    if cat == "taunt" then
-      dat = NS.db.global.Group.tauntCommon
-    elseif cat == "incapacitate" then
-      dat = NS.db.global.Group.incapacitateCommon
-    elseif cat == "silence" then
-      dat = NS.db.global.Group.silenceCommon
-    elseif cat == "disorient" then
-      dat = NS.db.global.Group.disorientCommon
-    elseif cat == "stun" then
-      dat = NS.db.global.Group.stunCommon
-    elseif cat == "root" then
-      dat = NS.db.global.Group.rootCommon
-    elseif cat == "knockback" then
-      dat = NS.db.global.Group.knockbackCommon
-    elseif cat == "disarm" then
-      dat = NS.db.global.Group.disarmCommon
-    end
-    frame.Texture:SetTexture(C_Spell.GetSpellTexture(dat))
-  else
-    frame.Texture:SetTexture(C_Spell.GetSpellTexture(SetTextureChange(tempSpellID)))
-  end
-
+  frame.border:SetVertexColor(mask_rgb[1], mask_rgb[2], mask_rgb[3], mask_rgb[4])
+  frame.Texture:SetTexture(C_Spell.GetSpellTexture(SetTextureChange(tempSpellID)))
   frame.c:SetCooldown(GetTime(), fTime + DR_TIME)
   frame._font:SetCooldown(GetTime(), fTime + DR_TIME)
 end
@@ -240,7 +208,7 @@ local function CreateRacialnTrinket(sourceGUID, setid, timeid)
       or (_G["NCT" .. sourceGUID .. setid].timeleft and _G["NCT" .. sourceGUID .. setid].timeleft < RSTimeCache[timeid])
     then
       CreateCooldownFrame(setid, sourceGUID)
-      cooldown[sourceGUID][setid].timeleft = RSTimeCache[timeid] --timeleft CreateCooldownFrame
+      cooldown[sourceGUID][setid].timeleft = RSTimeCache[timeid] -- timeleft CreateCooldownFrame
       cooldown[sourceGUID][setid].c:SetCooldown(GetTime(), RSTimeCache[timeid])
       cooldown[sourceGUID][setid]._font:SetCooldown(GetTime(), RSTimeCache[timeid])
     end
@@ -288,10 +256,9 @@ function NameplateTrinket:Test()
     return
   end
   local PUID = PGUID
-  local spellID = { 336126, 59752, 6552, 527 }
-  --	local spellID = { 362699, 59752, 6552, 527 }
+  local spellID = { 336126, 59752 }
+  --	local spellID = { 362699, 59752 }
   local testset = true
-  local ct = NS.db.global.CCHL.Enable
   if not cooldown[GUID] then
     cooldown[GUID] = {}
   end
@@ -299,13 +266,8 @@ function NameplateTrinket:Test()
     CreateBorderTexture(GUID, spellID[i])
     cooldown[GUID][spellID[i]] = _G["NCT" .. GUID .. spellID[i]]
     cooldown[GUID][spellID[i]].Texture:SetTexture(CDTextureCache[spellID[i]])
-    if i == 4 then
-      cooldown[GUID][spellID[i]].c:SetCooldown(GetTime(), CDDTimeCache[spellID[i]])
-      cooldown[GUID][spellID[i]]._font:SetCooldown(GetTime(), CDDTimeCache[spellID[i]])
-    else
-      cooldown[GUID][spellID[i]].c:SetCooldown(GetTime(), CDTimeCache[spellID[i]])
-      cooldown[GUID][spellID[i]]._font:SetCooldown(GetTime(), CDTimeCache[spellID[i]])
-    end
+    cooldown[GUID][spellID[i]].c:SetCooldown(GetTime(), CDTimeCache[spellID[i]])
+    cooldown[GUID][spellID[i]]._font:SetCooldown(GetTime(), CDTimeCache[spellID[i]])
     --if spellID[i] == 362699 then -- echoing
     --	NameplateTrinket:ShowGlow(cooldown, GUID, spellID[i], NS.db.global.Func.ColorBasc)
     --end
@@ -313,36 +275,36 @@ function NameplateTrinket:Test()
 
   -- Do not Change about CommonIcon Just test spellid
   if NS.db.global.Group.taunt then
-    CreateDiminishFrame(GUID, CommonIcon["taunt"], ct, testset)
-    CreateDiminishFrame(PUID, CommonIcon["taunt"], ct, testset)
+    CreateDiminishFrame(GUID, CommonIcon["taunt"], true, testset)
+    CreateDiminishFrame(PUID, CommonIcon["taunt"], true, testset)
   end
   if NS.db.global.Group.incapacitate then
-    CreateDiminishFrame(GUID, CommonIcon["incapacitate"], ct, testset)
-    CreateDiminishFrame(PUID, CommonIcon["incapacitate"], ct, testset)
+    CreateDiminishFrame(GUID, CommonIcon["incapacitate"], true, testset)
+    CreateDiminishFrame(PUID, CommonIcon["incapacitate"], true, testset)
   end
   if NS.db.global.Group.silence then
-    CreateDiminishFrame(GUID, CommonIcon["silence"], ct, testset)
-    CreateDiminishFrame(PUID, CommonIcon["silence"], ct, testset)
+    CreateDiminishFrame(GUID, CommonIcon["silence"], true, testset)
+    CreateDiminishFrame(PUID, CommonIcon["silence"], true, testset)
   end
   if NS.db.global.Group.disorient then
-    CreateDiminishFrame(GUID, CommonIcon["disorient"], ct, testset)
-    CreateDiminishFrame(PUID, CommonIcon["disorient"], ct, testset)
+    CreateDiminishFrame(GUID, CommonIcon["disorient"], true, testset)
+    CreateDiminishFrame(PUID, CommonIcon["disorient"], true, testset)
   end
   if NS.db.global.Group.stun then
-    CreateDiminishFrame(GUID, CommonIcon["stun"], ct, testset)
-    CreateDiminishFrame(PUID, CommonIcon["stun"], ct, testset)
+    CreateDiminishFrame(GUID, CommonIcon["stun"], true, testset)
+    CreateDiminishFrame(PUID, CommonIcon["stun"], true, testset)
   end
   if NS.db.global.Group.root then
-    CreateDiminishFrame(GUID, CommonIcon["root"], ct, testset)
-    CreateDiminishFrame(PUID, CommonIcon["root"], ct, testset)
+    CreateDiminishFrame(GUID, CommonIcon["root"], true, testset)
+    CreateDiminishFrame(PUID, CommonIcon["root"], true, testset)
   end
   if NS.db.global.Group.knockback then
-    CreateDiminishFrame(GUID, CommonIcon["knockback"], ct, testset)
-    CreateDiminishFrame(PUID, CommonIcon["knockback"], ct, testset)
+    CreateDiminishFrame(GUID, CommonIcon["knockback"], true, testset)
+    CreateDiminishFrame(PUID, CommonIcon["knockback"], true, testset)
   end
   if NS.db.global.Group.disarm then
-    CreateDiminishFrame(GUID, CommonIcon["disarm"], ct, testset)
-    CreateDiminishFrame(PUID, CommonIcon["disarm"], ct, testset)
+    CreateDiminishFrame(GUID, CommonIcon["disarm"], true, testset)
+    CreateDiminishFrame(PUID, CommonIcon["disarm"], true, testset)
   end
 end
 
@@ -384,10 +346,8 @@ function NameplateTrinket:COMBAT_LOG_EVENT_UNFILTERED()
     return
   end
   if isHarm(destFlags) ~= 0 and AuraType == "DEBUFF" then
-    if not NS.db.global.gSetting.CCShowMonster then
-      if not strfind(destGUID, "Player") then
-        return
-      end
+    if not strfind(destGUID, "Player") then
+      return
     end
     if combatEvent == "SPELL_AURA_APPLIED" or combatEvent == "SPELL_AURA_REFRESH" then
       CreateDiminishFrame(destGUID, spellID, true, false)
@@ -402,10 +362,10 @@ function NameplateTrinket:COMBAT_LOG_EVENT_UNFILTERED()
       or combatEvent == "SPELL_MISSED"
       or combatEvent == "SPELL_SUMMON"
     then
-      -- Timeleft Used - Trinket, RST_Racial, Reset // Not Used - Dispel, Interrupt, ETCCD, Racial
+      -- Timeleft Used - Trinket, RST_Racial, Reset // Not Used - Dispel, ETCCD, Racial
       if CDTimeCache[spellID] then
         CreateCooldownFrame(spellID, sourceGUID)
-        if not (NS.n_MAP["Interrupt"][spellID] or NS.n_MAP["ETCCD"][spellID] or NS.n_MAP["Racial"][spellID]) then
+        if not (NS.n_MAP["ETCCD"][spellID] or NS.n_MAP["Racial"][spellID]) then
           if
             (spellID == 42292 or spellID == 336126)
             and NS.n_MAP["Trinket"][spellID]
@@ -429,7 +389,6 @@ function NameplateTrinket:COMBAT_LOG_EVENT_UNFILTERED()
           cooldown[sourceGUID][spellID]._font:SetCooldown(GetTime(), CDTimeCache[spellID])
         end
         --if spellID == 362699 then -- echoing
-        --  self:ShowGlow(cooldown, sourceGUID, spellID, NS.db.global.Func.ColorBasc)
         --  cooldown[sourceGUID][spellID]:Show()
         --end
       end
@@ -450,42 +409,6 @@ function NameplateTrinket:COMBAT_LOG_EVENT_UNFILTERED()
       elseif spellID == 59752 then
         CreateRacialnTrinket(sourceGUID, 336126, spellID)
       end
-    elseif combatEvent == "SPELL_DISPEL" then
-      if CDDTimeCache[spellID] then
-        CreateCooldownFrame(spellID, sourceGUID)
-        cooldown[sourceGUID][spellID].c:SetCooldown(GetTime(), CDDTimeCache[spellID])
-        cooldown[sourceGUID][spellID]._font:SetCooldown(GetTime(), CDDTimeCache[spellID])
-      end
-    end
-  end
-end
-
-function NameplateTrinket:ShowGlow(data, sourceGUID, spellID, mask_rgb)
-  local frame = data[sourceGUID][spellID]
-
-  if NS.db.global.CCHL.Enable and frame then
-    if NS.db.global.CCHL.Style == "ButtonGlow" then
-      LCG.ButtonGlow_Start(frame, mask_rgb)
-    elseif NS.db.global.CCHL.Style == "PixelGlow" then
-      --  LCG.PixelGlow_Start(frame[, color[, N[, frequency[, length[, th[, xOffset[, yOffset[, border[ ,key]]]]]]]])
-      LCG.PixelGlow_Start(frame, mask_rgb, nil, nil, NS.db.global.CCHL.pixellength, NS.db.global.CCHL.pixelth)
-    elseif NS.db.global.CCHL.Style == "AutoCastGlow" then
-      --  LCG.AutoCastGlow_Start(frame[, color[, N[, frequency[, scale[, xOffset[, yOffset[, key]]]]]]])
-      LCG.AutoCastGlow_Start(frame, mask_rgb, nil, nil, NS.db.global.CCHL.autoscale)
-    end
-  end
-end
-
-function NameplateTrinket:HideGlow(data, sourceGUID, spellID)
-  local frame = data[sourceGUID][spellID]
-
-  if NS.db.global.CCHL.Enable and frame then
-    if NS.db.global.CCHL.Style == "ButtonGlow" then
-      LCG.ButtonGlow_Stop(frame)
-    elseif NS.db.global.CCHL.Style == "PixelGlow" then
-      LCG.PixelGlow_Stop(frame)
-    elseif NS.db.global.CCHL.Style == "AutoCastGlow" then
-      LCG.AutoCastGlow_Stop(frame)
     end
   end
 end
@@ -509,6 +432,9 @@ local function UpdateFrame(g_tb, sel, elapsed)
   local alpha, scale
   for n, tb in pairs(g_tb) do -- n = guid
     if NS.db.global.pSetting.pEnable and sel and n == PGUID then
+      local offset = (isTarget(PGUID, "target") and NS.db.global.Func.Trinket and NS.db.global.Func.Racial) and 3
+        or (isTarget(PGUID, "target") and (NS.db.global.Func.Trinket or NS.db.global.Func.Racial)) and 2
+        or 1
       local PCNT = 0
       alpha = NS.db.global.gSetting.TargetAlpha
       scale = NS.db.global.pSetting.pScale
@@ -520,9 +446,11 @@ local function UpdateFrame(g_tb, sel, elapsed)
           fr:SetScale(scale)
           fr:SetPoint(
             "TOPLEFT",
-            NS.db.global.pSetting.attachFrame,
+            "PlayerFrame",
             "TOPLEFT",
-            NS.db.global.pSetting.pxOfs + (NS.db.global.gSetting.FrameSize + 2) * PCNT,
+            NS.db.global.pSetting.pxOfs
+              + ((NS.db.global.gSetting.FrameSize + 2) * offset)
+              + (NS.db.global.gSetting.FrameSize + 2) * PCNT,
             NS.db.global.pSetting.pyOfs + NS.db.global.gSetting.FrameSize * 2
           )
           PCNT = PCNT + 1
@@ -540,11 +468,10 @@ local function UpdateFrame(g_tb, sel, elapsed)
       end
 
       if pl then
-        local gn = 0
         local SCNT = 0
         if isTarget(n, "target") or isTarget(n, "focus") then
           alpha = NS.db.global.gSetting.TargetAlpha
-          scale = 1
+          scale = NS.db.global.gSetting.TargetScale
         else
           alpha = NS.db.global.gSetting.OtherAlpha
           scale = NS.db.global.gSetting.OtherScale
@@ -564,113 +491,49 @@ local function UpdateFrame(g_tb, sel, elapsed)
             fr:SetScale(scale)
             fr._font:SetAlpha(alpha)
 
-            if NS.db.global.gSetting.SortingStyle then
-              if sel then
-                if NS.db.global.Func.CC then
-                  fr:SetPoint(
-                    "RIGHT",
-                    pl,
-                    "RIGHT",
-                    NS.db.global.gSetting.RightxOfs
-                      + (NS.db.global.gSetting.FrameSize * 3)
-                      + NS.db.global.gSetting.FrameSize * SCNT,
-                    NS.db.global.gSetting.yOfs
-                  )
-                  SCNT = SCNT + 1
-                else
-                  fr:SetPoint("TOP", UIParent, "TOP", 0, 100)
-                end
+            if sel then
+              if
+                NS.db.global.Group.taunt
+                or NS.db.global.Group.incapacitate
+                or NS.db.global.Group.silence
+                or NS.db.global.Group.disorient
+                or NS.db.global.Group.stun
+                or NS.db.global.Group.root
+                or NS.db.global.Group.knockback
+                or NS.db.global.Group.disarm
+              then
+                local offsetX = (NS.db.global.Func.Trinket and NS.db.global.Func.Racial) and 3
+                  or not (NS.db.global.Func.Trinket and NS.db.global.Func.Racial) and 1
+                  or 2
+                fr:SetPoint(
+                  "RIGHT",
+                  pl,
+                  "RIGHT",
+                  NS.db.global.gSetting.xOfs
+                    + (NS.db.global.gSetting.FrameSize * offsetX)
+                    + NS.db.global.gSetting.FrameSize * SCNT,
+                  NS.db.global.gSetting.yOfs
+                )
+                SCNT = SCNT + 1
               else
-                if NS.db.global.Func.Trinket and NS.n_MAP["Trinket"][id] then
-                  fr:SetPoint(
-                    "RIGHT",
-                    pl,
-                    "RIGHT",
-                    NS.db.global.gSetting.RightxOfs + NS.db.global.gSetting.FrameSize,
-                    NS.db.global.gSetting.yOfs
-                  )
-                elseif NS.db.global.Func.Racial and (NS.n_MAP["Racial"][id] or NS.n_MAP["RST_Racial"][id]) then
-                  fr:SetPoint(
-                    "RIGHT",
-                    pl,
-                    "RIGHT",
-                    NS.db.global.gSetting.RightxOfs + NS.db.global.gSetting.FrameSize * 2,
-                    NS.db.global.gSetting.yOfs
-                  )
-                elseif NS.db.global.Func.Interrupt and NS.n_MAP["Interrupt"][id] then
-                  fr:SetPoint(
-                    "BOTTOMRIGHT",
-                    pl,
-                    "TOPLEFT",
-                    NS.db.global.gSetting.LeftxOfs,
-                    NS.db.global.gSetting.yOfs - NS.db.global.gSetting.FrameSize
-                  )
-                elseif NS.db.global.Func.Dispel and (NS.n_MAP["Dispel"][id] or NS.n_MAP["ETCCD"][id]) then
-                  fr:SetPoint(
-                    "BOTTOMRIGHT",
-                    pl,
-                    "TOPLEFT",
-                    NS.db.global.gSetting.LeftxOfs,
-                    NS.db.global.gSetting.yOfs - NS.db.global.gSetting.FrameSize * 2
-                  )
-                else
-                  fr:SetPoint("TOP", UIParent, "TOP", 0, 100)
-                end
+                fr:SetPoint("TOP", UIParent, "TOP", 0, 100)
               end
             else
-              if sel then
-                if NS.db.global.Func.CC then
-                  fr:SetPoint(
-                    "BOTTOMLEFT",
-                    pl,
-                    "TOPRIGHT",
-                    NS.db.global.gSetting.RightxOfs
-                      + NS.db.global.gSetting.FrameSize
-                      + NS.db.global.gSetting.FrameSize * floor(gn / 2),
-                    NS.db.global.gSetting.yOfs
-                      - NS.db.global.gSetting.FrameSize
-                      - NS.db.global.gSetting.FrameSize * (gn % 2)
-                  )
-                  gn = gn + 1
-                else
-                  fr:SetPoint("TOP", UIParent, "TOP", 0, 100)
-                end
+              local attachFrame = (NS.db.global.pSetting.pEnable and n == PGUID) and "PlayerFrame" or pl
+              local attachPoint = (NS.db.global.pSetting.pEnable and n == PGUID) and "TOPLEFT" or "RIGHT"
+              local attachX = (NS.db.global.pSetting.pEnable and n == PGUID)
+                  and (NS.db.global.pSetting.pxOfs + (NS.db.global.gSetting.FrameSize + 2))
+                or (NS.db.global.gSetting.xOfs + NS.db.global.gSetting.FrameSize)
+              local attachY = (NS.db.global.pSetting.pEnable and n == PGUID)
+                  and (NS.db.global.pSetting.pyOfs + NS.db.global.gSetting.FrameSize * 2)
+                or NS.db.global.gSetting.yOfs
+              if NS.db.global.Func.Trinket and NS.n_MAP["Trinket"][id] then
+                fr:SetPoint(attachPoint, attachFrame, attachPoint, attachX, attachY)
+              elseif NS.db.global.Func.Racial and (NS.n_MAP["Racial"][id] or NS.n_MAP["RST_Racial"][id]) then
+                local offsetX = NS.db.global.Func.Trinket and 2 or 1
+                fr:SetPoint(attachPoint, attachFrame, attachPoint, attachX * offsetX, attachY)
               else
-                if NS.db.global.Func.Trinket and NS.n_MAP["Trinket"][id] then
-                  fr:SetPoint(
-                    "BOTTOMLEFT",
-                    pl,
-                    "TOPRIGHT",
-                    NS.db.global.gSetting.RightxOfs,
-                    NS.db.global.gSetting.yOfs - NS.db.global.gSetting.FrameSize
-                  )
-                elseif NS.db.global.Func.Racial and (NS.n_MAP["Racial"][id] or NS.n_MAP["RST_Racial"][id]) then
-                  fr:SetPoint(
-                    "BOTTOMLEFT",
-                    pl,
-                    "TOPRIGHT",
-                    NS.db.global.gSetting.RightxOfs,
-                    NS.db.global.gSetting.yOfs - NS.db.global.gSetting.FrameSize * 2
-                  )
-                elseif NS.db.global.Func.Interrupt and NS.n_MAP["Interrupt"][id] then
-                  fr:SetPoint(
-                    "BOTTOMRIGHT",
-                    pl,
-                    "TOPLEFT",
-                    NS.db.global.gSetting.LeftxOfs,
-                    NS.db.global.gSetting.yOfs - NS.db.global.gSetting.FrameSize
-                  )
-                elseif NS.db.global.Func.Dispel and (NS.n_MAP["Dispel"][id] or NS.n_MAP["ETCCD"][id]) then
-                  fr:SetPoint(
-                    "BOTTOMRIGHT",
-                    pl,
-                    "TOPLEFT",
-                    NS.db.global.gSetting.LeftxOfs,
-                    NS.db.global.gSetting.yOfs - NS.db.global.gSetting.FrameSize * 2
-                  )
-                else
-                  fr:SetPoint("TOP", UIParent, "TOP", 0, 100)
-                end
+                fr:SetPoint("TOP", UIParent, "TOP", 0, 100)
               end
             end
           else
@@ -688,9 +551,7 @@ local function UpdateFrame(g_tb, sel, elapsed)
 end
 
 function OnUpdate(_, elapsed)
-  -- print("OnUpdate")
   getUpdate = getUpdate + elapsed
-
   if getUpdate > UPDATE_INTERVAL then
     UpdateFrame(gradual, true)
     UpdateFrame(cooldown, false, getUpdate)
@@ -704,9 +565,7 @@ function NameplateTrinket:PLAYER_LOGIN()
   for str in pairs(NS.n_MAP) do
     for sp, tm in pairs(NS.n_MAP[str]) do
       if C_Spell.GetSpellName(sp) then
-        if str == "Dispel" then
-          CDDTimeCache[sp] = tm
-        elseif str == "Reset" then
+        if str == "Reset" then
           RSTimeCache[sp] = tm
         else
           CDTimeCache[sp] = tm
@@ -717,14 +576,9 @@ function NameplateTrinket:PLAYER_LOGIN()
       end
     end
   end
+
   CDTextureCache[336139] = "Interface\\Icons\\Sha_ability_rogue_sturdyrecuperate" -- Adaptation
   -- CDTextureCache[196029] = "Interface\\Icons\\Ability_bossdarkvindicator_auraofcontempt" -- Relentless
-
-  for _, id in pairs(CommonIcon) do
-    if not C_Spell.GetSpellName(id) then
-      DEFAULT_CHAT_FRAME:AddMessage("|c00008000NameplateTrinket|r [CommonIcon] " .. id)
-    end
-  end
 
   NameplateTrinketFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
   NameplateTrinketFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
