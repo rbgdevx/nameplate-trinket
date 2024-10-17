@@ -994,10 +994,10 @@ do
     LibStub("AceConfig-3.0"):RegisterOptionsTable(AddonName, NS.AceConfig)
     LibStub("AceConfigDialog-3.0"):AddToBlizOptions(AddonName, AddonName)
 
-    SLASH_NPC1 = AddonName
-    SLASH_NPC2 = "/npc"
+    SLASH_NPT1 = AddonName
+    SLASH_NPT2 = "/npt"
 
-    function SlashCmdList.NPC(message)
+    function SlashCmdList.NPT(message)
       Options_SlashCommands(message)
     end
   end
