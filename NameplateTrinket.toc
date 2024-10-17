@@ -10,7 +10,7 @@
 ## X-License: All Rights Reserved
 ## X-Website: https://www.curseforge.com/wow/addons/nameplate-trinket
 ## X-Curse-Project-ID: 1123372
-## X-Wago-ID:
+## X-Wago-ID: kNMdV3Gz
 ## X-WoWI-ID:
 
 #@no-lib-strip@
