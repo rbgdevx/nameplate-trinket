@@ -1,89 +1,61 @@
-local AddonName, NS = ...
+local _, NS = ...
 
-local CreateFrame = CreateFrame
+NS.IN_DUEL = false
 
----@class GlobalTable : table
----@field gSetting any
----@field pSetting any
----@field Func any
----@field Group any
----@field CCHL any
----@field debug boolean
+NS.SPELL_PVPADAPTATION = 195901
+NS.SPELL_PVPTRINKET = 336126
+NS.SPELL_RESET = 294701
 
----@class DBTable : table
----@field global GlobalTable
+NS.ICON_GROW_DIRECTION_RIGHT = "right"
+NS.ICON_GROW_DIRECTION_LEFT = "left"
+NS.ICON_GROW_DIRECTION_UP = "up"
+NS.ICON_GROW_DIRECTION_DOWN = "down"
 
----@class NameplateTrinket
----@field ADDON_LOADED function
----@field PLAYER_LOGIN function
----@field LOADING_SCREEN_DISABLED function
----@field PLAYER_LEAVING_WORLD function
----@field PLAYER_ENTERING_WORLD function
----@field NAME_PLATE_UNIT_ADDED function
----@field NAME_PLATE_UNIT_REMOVED function
----@field COMBAT_LOG_EVENT_UNFILTERED function
----@field Refresh function
----@field ClearValue function
----@field Test function
----@field CheckCategory function
----@field ShowGlow function
----@field HideGlow function
----@field SlashCommands function
----@field frame Frame
----@field db GlobalTable
+NS.SORT_MODE_NONE = "none"
+NS.SORT_MODE_TRINKET_INTERRUPT_OTHER = "trinket-interrupt-other"
+NS.SORT_MODE_INTERRUPT_TRINKET_OTHER = "interrupt-trinket-other"
+NS.SORT_MODE_TRINKET_OTHER = "trinket-other"
+NS.SORT_MODE_INTERRUPT_OTHER = "interrupt-other"
 
----@type NameplateTrinket
----@diagnostic disable-next-line: missing-fields
-local NameplateTrinket = {}
-NS.NameplateTrinket = NameplateTrinket
+NS.GLOW_TIME_INFINITE = 4 * 1000 * 1000 * 1000
 
-local NameplateTrinketFrame = CreateFrame("Frame", AddonName .. "Frame")
-NameplateTrinketFrame:SetScript("OnEvent", function(_, event, ...)
-  if NameplateTrinket[event] then
-    NameplateTrinket[event](NameplateTrinket, ...)
-  end
-end)
-NS.NameplateTrinket.frame = NameplateTrinketFrame
+NS.INSTANCE_TYPE_NONE = "none"
+NS.INSTANCE_TYPE_UNKNOWN = "unknown"
+NS.INSTANCE_TYPE_PVP = "pvp"
+NS.INSTANCE_TYPE_PVP_BG_40PPL = "pvp_bg_40ppl"
+NS.INSTANCE_TYPE_ARENA = "arena"
+NS.INSTANCE_TYPE_PARTY = "party"
+NS.INSTANCE_TYPE_RAID = "raid"
+NS.INSTANCE_TYPE_SCENARIO = "scenario"
+
+NS.UNKNOWN_CLASS = "MISC"
+NS.ALL_CLASSES = "ALL-CLASSES"
+
+NS.EPIC_BG_ZONE_IDS = {
+  [30] = true, -- Alterac Valley
+  [628] = true, -- Isle of Conquest
+  [1191] = true, -- Ashran
+  [1280] = true, -- Southshore vs. Tarren Mill
+  [2118] = true, -- Battle for Wintergrasp
+  [2197] = true, -- Korrak's Revenge
+}
 
 NS.DefaultDatabase = {
   global = {
-    gSetting = {
-      ShowFriendlyPlayer = true,
-      CCCommonIcon = false,
-      CooldownSpiral = true,
-      FrameSize = 25,
-      xOfs = 0,
-      yOfs = 0,
-      TargetAlpha = 1,
-      TargetScale = 1,
-      OtherAlpha = 0.6,
-      OtherScale = 1 / GetCVar("nameplateSelectedScale"),
-    },
-    pSetting = {
-      pEnable = true,
-      pxOfs = 0,
-      pyOfs = 0,
-      pScale = 1.0,
-    },
-    Func = {
-      Racial = true,
-      Trinket = true,
-      ColorBasc = { 1, 1, 1, 1.0 },
-      IconBorder = "2px",
-      FontEnable = true,
-      FontScale = 1.0,
-      FontPoint = "TOPRIGHT",
-    },
-    Group = {
-      taunt = false,
-      incapacitate = true,
-      silence = true,
-      disorient = true,
-      stun = true,
-      root = true,
-      knockback = false,
-      disarm = true,
-    },
+    anchor = "BOTTOMLEFT",
+    anchorTo = "TOPRIGHT",
+    growDirection = "RIGHT",
+    offsetX = 2,
+    offsetY = 2,
+    iconSize = 25,
+    iconSpacing = 2,
+    trinketOnly = true,
+    showOnAllies = true,
+    SpellCDs = {},
+    targetOnly = false,
+    ignoreNameplateAlpha = false,
+    ignoreNameplateScale = false,
+    test = false,
     debug = false,
   },
 }

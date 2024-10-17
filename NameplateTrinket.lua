@@ -1,591 +1,1028 @@
 local AddonName, NS = ...
 
-local _G = _G
-
-local pairs = pairs
-local select = select
-local unpack = unpack
-local CreateFrame = CreateFrame
-local GetTime = GetTime
-local GetPlayerInfoByGUID = GetPlayerInfoByGUID
 local LibStub = LibStub
+local CreateFrame = CreateFrame
+local pairs = pairs
 local UnitGUID = UnitGUID
+local GetTime = GetTime
+local IsInInstance = IsInInstance
+local issecure = issecure
 local CombatLogGetCurrentEventInfo = CombatLogGetCurrentEventInfo
+local print = print
+local next = next
 
-local band = bit.band
-local floor = math.floor
-local strfind = string.find
+local mmax = math.max
+local tinsert = table.insert
+local tsort = table.sort
+local wipe = table.wipe
+local bband = bit.band
 
-local UnitAura = C_UnitAuras.GetAuraDataByIndex
+local After = C_Timer.After
+local GetNamePlates = C_NamePlate.GetNamePlates
+local GUIDIsPlayer = C_PlayerInfo.GUIDIsPlayer
 local GetNamePlateForUnit = C_NamePlate.GetNamePlateForUnit
 
-local COMBATLOG_OBJECT_REACTION_HOSTILE = COMBATLOG_OBJECT_REACTION_HOSTILE
-local COMBATLOG_OBJECT_REACTION_MASK = COMBATLOG_OBJECT_REACTION_MASK
+local Interrupts = NS.Interrupts
+local Trinkets = NS.Trinkets
 
----@type NameplateTrinket
-local NameplateTrinket = NS.NameplateTrinket
-local NameplateTrinketFrame = NS.NameplateTrinket.frame
-
-local DRL = LibStub("DRList-1.0")
 local LHT = LibStub("LibHealerTracker-1.0")
 
-local DR_TIME = DRL.resetTimes.retail["default"]
-local getUpdate = 0
-local npUnitID = {}
-local CDTimeCache = {}
-local RSTimeCache = {}
-local CDTextureCache = {}
-local gradual = {}
-local cooldown = {}
-local UPDATE_INTERVAL = 0.25
-local PGUID = UnitGUID("player")
-local bordertex = {
-  ["2px"] = "Interface\\AddOns\\NameplateTrinket\\media\\32x2px.tga",
-  ["3px"] = "Interface\\AddOns\\NameplateTrinket\\media\\32x3px.tga",
-}
-local CommonIcon = {
-  ["taunt"] = 355,
-  ["incapacitate"] = 118,
-  ["silence"] = 15487,
-  ["disorient"] = 118699,
-  ["stun"] = 408,
-  ["root"] = 122,
-  ["knockback"] = 236777,
-  ["disarm"] = 236077,
-}
+local NameplateTrinket = {}
+NS.NameplateTrinket = NameplateTrinket
 
-function NameplateTrinket:Refresh()
-  self:ClearValue(false)
+local NameplateTrinketFrame = CreateFrame("Frame", AddonName .. "Frame")
+NameplateTrinketFrame:SetScript("OnEvent", function(_, event, ...)
+  if NameplateTrinket[event] then
+    NameplateTrinket[event](NameplateTrinket, ...)
+  end
+end)
+NS.NameplateTrinket.frame = NameplateTrinketFrame
+
+-- Consts
+local SPELL_PVPADAPTATION, SPELL_PVPTRINKET, SORT_MODE_NONE
+local SORT_MODE_TRINKET_INTERRUPT_OTHER, SORT_MODE_INTERRUPT_TRINKET_OTHER, SORT_MODE_TRINKET_OTHER, SORT_MODE_INTERRUPT_OTHER
+do
+  SPELL_PVPADAPTATION, SPELL_PVPTRINKET, SPELL_RESET = NS.SPELL_PVPADAPTATION, NS.SPELL_PVPTRINKET, NS.SPELL_RESET
+  SORT_MODE_NONE, SORT_MODE_TRINKET_INTERRUPT_OTHER, SORT_MODE_INTERRUPT_TRINKET_OTHER, SORT_MODE_TRINKET_OTHER, SORT_MODE_INTERRUPT_OTHER =
+    NS.SORT_MODE_NONE,
+    NS.SORT_MODE_TRINKET_INTERRUPT_OTHER,
+    NS.SORT_MODE_INTERRUPT_TRINKET_OTHER,
+    NS.SORT_MODE_TRINKET_OTHER,
+    NS.SORT_MODE_INTERRUPT_OTHER
 end
 
-local function GetAuraDuration(unitID, spellID)
-  if not unitID then
-    return
+-- Utilities
+local SpellTextureByID, SpellNameByID = NS.SpellTextureByID, NS.SpellNameByID
+
+local SpellsPerPlayerGUID = {}
+
+local ElapsedTimer = 0
+local Nameplates = {}
+local NameplatesVisible = {}
+local AllCooldowns = {}
+NS.AllCooldowns = AllCooldowns
+local EventFrame, TestFrame, LocalPlayerGUID
+
+EventFrame = CreateFrame("Frame")
+EventFrame:SetScript("OnEvent", function(self, event, ...)
+  self[event](...)
+end)
+
+local AllocateIcon, ReallocateAllIcons, UpdateOnlyOneNameplate, HideCDIcon, ShowCDIcon, OnUpdate
+
+-------------------------------------------------------------------------------------------------
+----- Initialize
+-------------------------------------------------------------------------------------------------
+do
+  function NS.GetDefaultDBEntryForSpell()
+    return {
+      ["enabled"] = true,
+    }
   end
 
-  for i = 1, 40 do
-    local aura = UnitAura(unitID, i, "HARMFUL")
-    if not aura or not aura.spellId then
-      return
-    end -- no more debuffs
+  function NS.BuildCooldownValues()
+    wipe(AllCooldowns)
 
-    if spellID == aura.spellId then
-      return aura.duration, aura.expirationTime
-    end
-  end
-end
-
-local function isHarm(fl)
-  local val = COMBATLOG_OBJECT_REACTION_HOSTILE
-  if NS.db.global.gSetting.ShowFriendlyPlayer then
-    val = COMBATLOG_OBJECT_REACTION_MASK
-  end
-  return band(fl, val)
-end
-
-local function isTarget(n, tar)
-  local tn = UnitGUID(tar)
-  return (tn and n == tn)
-end
-
-local function SetTextureChange(spellid)
-  if spellid == 334693 then -- Absolute Zero
-    spellid = 279302 -- Breath of Sindragosa
-  end
-  return spellid
-end
-
-local function CreateBorderTexture(FirstName, SecondName)
-  local frame = CreateFrame("Frame", "NCT" .. FirstName .. SecondName)
-  frame:SetFrameStrata("BACKGROUND")
-  frame:SetSize(NS.db.global.gSetting.FrameSize, NS.db.global.gSetting.FrameSize)
-  frame:SetPoint("TOP", UIParent, "TOP", 0, 100)
-  frame.Texture = frame:CreateTexture(nil, "BACKGROUND")
-  frame.Texture:SetAllPoints()
-
-  frame.border = frame:CreateTexture(nil, "BORDER")
-  frame.border:SetTexture(bordertex[NS.db.global.Func.IconBorder])
-  frame.border:SetVertexColor(unpack(NS.db.global.Func.ColorBasc))
-  frame.border:SetAllPoints()
-
-  frame.c = CreateFrame("Cooldown", nil, frame) -- "CooldownFrameTemplate Frame IsVisible?
-  frame.c:SetFrameLevel(frame:GetFrameLevel() + 2)
-  local ctex = frame:CreateTexture(nil, "BACKGROUND") -- "CooldownFrameTemplate"
-  ctex:SetColorTexture(1, 1, 1)
-  frame.c:SetSwipeTexture(ctex:GetTexture() or "", 1, 1, 1, 1) -- Added missing arguments
-  frame.c:SetSwipeColor(0, 0, 0, 0.6)
-  frame.c:SetReverse(true)
-  frame.c:SetDrawSwipe(NS.db.global.gSetting.CooldownSpiral)
-  frame.c:SetHideCountdownNumbers(true) -- basic interface
-  frame.c.noCooldownCount = true -- OmniCC
-  frame.c:SetAllPoints()
-
-  frame._font = CreateFrame("Cooldown")
-  frame._font:SetFrameLevel(frame:GetFrameLevel() + 8)
-  frame._font:SetHideCountdownNumbers(not NS.db.global.Func.FontEnable) -- basic interface
-  frame._font.noCooldownCount = not NS.db.global.Func.FontEnable -- OmniCC
-  frame._font:SetSize(NS.db.global.gSetting.FrameSize, NS.db.global.gSetting.FrameSize)
-  frame._font:SetScale(NS.db.global.Func.FontScale)
-  frame._font:SetPoint("CENTER", frame, NS.db.global.Func.FontPoint, 0, 0)
-end
-
-local function CreateDiminishFrame(tempGUID, tempSpellID, isApplied, isTest)
-  local cat = NameplateTrinket:CheckCategory(tempSpellID)
-  if not cat then
-    return
-  end
-
-  if not gradual[tempGUID] then
-    gradual[tempGUID] = {}
-  end
-
-  if not gradual[tempGUID][cat] then
-    CreateBorderTexture(cat, tempGUID)
-    gradual[tempGUID][cat] = _G["NCT" .. cat .. tempGUID]
-    gradual[tempGUID][cat].c:SetScript("OnHide", function(self)
-      self.count = nil
-    end)
-  end
-
-  local frame = gradual[tempGUID][cat]
-  local fTime, expTime
-
-  if isApplied then
-    if frame.c.count then
-      frame.c.count = frame.c.count + 1
-    else
-      frame.c.count = 1
-    end
-    if isTest then
-      fTime = 0
-    else
-      local tmpuid
-      if tempGUID == PGUID then
-        tmpuid = "player"
-      else
-        tmpuid = npUnitID[tempGUID]
-      end
-      fTime, expTime = GetAuraDuration(tmpuid, tempSpellID)
-      if not fTime then
-        return
-      end
-    end
-  else
-    if not frame.c.count then
-      frame.c.count = 1
-    end
-    fTime = 0
-  end
-
-  local mask_rgb = { 0, 1, 0, 0.6 }
-  if frame.c.count == 2 then
-    mask_rgb = { 1, 1, 0, 0.6 }
-  elseif frame.c.count > 2 then
-    mask_rgb = { 1, 0, 0, 0.6 }
-  end
-
-  frame.border:SetVertexColor(mask_rgb[1], mask_rgb[2], mask_rgb[3], mask_rgb[4])
-  frame.Texture:SetTexture(C_Spell.GetSpellTexture(SetTextureChange(tempSpellID)))
-  frame.c:SetCooldown(GetTime(), fTime + DR_TIME)
-  frame._font:SetCooldown(GetTime(), fTime + DR_TIME)
-end
-
-local function CreateCooldownFrame(spellID, sourceGUID)
-  if not cooldown[sourceGUID] then
-    cooldown[sourceGUID] = {}
-  end
-  if not cooldown[sourceGUID][spellID] then
-    CreateBorderTexture(sourceGUID, spellID)
-    cooldown[sourceGUID][spellID] = _G["NCT" .. sourceGUID .. spellID]
-    cooldown[sourceGUID][spellID].Texture:SetTexture(CDTextureCache[spellID])
-  end
-end
-
-local function CreateRacialnTrinket(sourceGUID, setid, timeid)
-  if RSTimeCache[setid] then
-    if
-      not _G["NCT" .. sourceGUID .. setid]
-      or (_G["NCT" .. sourceGUID .. setid].timeleft and _G["NCT" .. sourceGUID .. setid].timeleft < RSTimeCache[timeid])
-    then
-      CreateCooldownFrame(setid, sourceGUID)
-      cooldown[sourceGUID][setid].timeleft = RSTimeCache[timeid] -- timeleft CreateCooldownFrame
-      cooldown[sourceGUID][setid].c:SetCooldown(GetTime(), RSTimeCache[timeid])
-      cooldown[sourceGUID][setid]._font:SetCooldown(GetTime(), RSTimeCache[timeid])
-    end
-  end
-end
-
-function NameplateTrinket:ClearValue(isTest)
-  for n, table in pairs(cooldown) do
-    for id, _ in pairs(table) do
-      _G["NCT" .. n .. id]:Hide()
-      _G["NCT" .. n .. id].c:Clear()
-      _G["NCT" .. n .. id]._font:Clear()
-      --_G["NCT"..n..id].c = nil
-      --_G["NCT"..n..id]._font = nil
-      _G["NCT" .. n .. id] = nil
-    end
-  end
-  for n, table in pairs(gradual) do
-    for id, _ in pairs(table) do
-      _G["NCT" .. id .. n]:Hide()
-      _G["NCT" .. id .. n].c:Clear()
-      _G["NCT" .. id .. n]._font:Clear()
-      --_G["NCT"..id..n].c = nil
-      --_G["NCT"..id..n]._font = nil
-      _G["NCT" .. id .. n] = nil
-    end
-  end
-  gradual = {}
-  cooldown = {}
-
-  if not isTest then
-    for k in pairs(npUnitID) do
-      npUnitID[k] = nil
-    end
-    npUnitID = {}
-  end
-end
-
-function NameplateTrinket:Test()
-  self:ClearValue(true)
-
-  local GUID = UnitGUID("target")
-  if not GUID then
-    DEFAULT_CHAT_FRAME:AddMessage("|c00008000" .. AddonName .. " |r " .. "Please select a nameplate to test")
-    return
-  end
-  local PUID = PGUID
-  local spellID = { 336126, 59752 }
-  --	local spellID = { 362699, 59752 }
-  local testset = true
-  if not cooldown[GUID] then
-    cooldown[GUID] = {}
-  end
-  for i = 1, #spellID do
-    CreateBorderTexture(GUID, spellID[i])
-    cooldown[GUID][spellID[i]] = _G["NCT" .. GUID .. spellID[i]]
-    cooldown[GUID][spellID[i]].Texture:SetTexture(CDTextureCache[spellID[i]])
-    cooldown[GUID][spellID[i]].c:SetCooldown(GetTime(), CDTimeCache[spellID[i]])
-    cooldown[GUID][spellID[i]]._font:SetCooldown(GetTime(), CDTimeCache[spellID[i]])
-    --if spellID[i] == 362699 then -- echoing
-    --	NameplateTrinket:ShowGlow(cooldown, GUID, spellID[i], NS.db.global.Func.ColorBasc)
-    --end
-  end
-
-  -- Do not Change about CommonIcon Just test spellid
-  if NS.db.global.Group.taunt then
-    CreateDiminishFrame(GUID, CommonIcon["taunt"], true, testset)
-    CreateDiminishFrame(PUID, CommonIcon["taunt"], true, testset)
-  end
-  if NS.db.global.Group.incapacitate then
-    CreateDiminishFrame(GUID, CommonIcon["incapacitate"], true, testset)
-    CreateDiminishFrame(PUID, CommonIcon["incapacitate"], true, testset)
-  end
-  if NS.db.global.Group.silence then
-    CreateDiminishFrame(GUID, CommonIcon["silence"], true, testset)
-    CreateDiminishFrame(PUID, CommonIcon["silence"], true, testset)
-  end
-  if NS.db.global.Group.disorient then
-    CreateDiminishFrame(GUID, CommonIcon["disorient"], true, testset)
-    CreateDiminishFrame(PUID, CommonIcon["disorient"], true, testset)
-  end
-  if NS.db.global.Group.stun then
-    CreateDiminishFrame(GUID, CommonIcon["stun"], true, testset)
-    CreateDiminishFrame(PUID, CommonIcon["stun"], true, testset)
-  end
-  if NS.db.global.Group.root then
-    CreateDiminishFrame(GUID, CommonIcon["root"], true, testset)
-    CreateDiminishFrame(PUID, CommonIcon["root"], true, testset)
-  end
-  if NS.db.global.Group.knockback then
-    CreateDiminishFrame(GUID, CommonIcon["knockback"], true, testset)
-    CreateDiminishFrame(PUID, CommonIcon["knockback"], true, testset)
-  end
-  if NS.db.global.Group.disarm then
-    CreateDiminishFrame(GUID, CommonIcon["disarm"], true, testset)
-    CreateDiminishFrame(PUID, CommonIcon["disarm"], true, testset)
-  end
-end
-
-function NameplateTrinket:CheckCategory(spellID)
-  local tempstr = DRL.spells[spellID]
-  if tempstr == "taunt" and NS.db.global.Group.taunt then
-  elseif tempstr == "incapacitate" and NS.db.global.Group.incapacitate then
-  elseif tempstr == "silence" and NS.db.global.Group.silence then
-  elseif tempstr == "disorient" and NS.db.global.Group.disorient then
-  elseif tempstr == "stun" and NS.db.global.Group.stun then
-  elseif tempstr == "root" and NS.db.global.Group.root then
-  elseif tempstr == "knockback" and NS.db.global.Group.knockback then
-  elseif tempstr == "disarm" and NS.db.global.Group.disarm then
-  else
-    return
-  end
-  return tempstr
-end
-
-function NameplateTrinket:PLAYER_ENTERING_WORLD()
-  self:ClearValue(false)
-end
-
-function NameplateTrinket:COMBAT_LOG_EVENT_UNFILTERED()
-  local _, combatEvent, _, sourceGUID, _, sourceFlags, _, destGUID, _, destFlags, _, spellID, _, _, AuraType =
-    CombatLogGetCurrentEventInfo()
-
-  if not (destGUID or sourceGUID) then
-    return
-  end
-  if
-    combatEvent ~= "SPELL_AURA_REMOVED"
-    and combatEvent ~= "SPELL_AURA_APPLIED"
-    and combatEvent ~= "SPELL_AURA_REFRESH"
-    and combatEvent ~= "SPELL_CAST_SUCCESS"
-    and combatEvent ~= "SPELL_MISSED"
-    and combatEvent ~= "SPELL_DISPEL"
-  then
-    return
-  end
-  if isHarm(destFlags) ~= 0 and AuraType == "DEBUFF" then
-    if not strfind(destGUID, "Player") then
-      return
-    end
-    if combatEvent == "SPELL_AURA_APPLIED" or combatEvent == "SPELL_AURA_REFRESH" then
-      CreateDiminishFrame(destGUID, spellID, true, false)
-    elseif combatEvent == "SPELL_AURA_REMOVED" then
-      CreateDiminishFrame(destGUID, spellID, false, false)
-    end
-  end
-  if isHarm(sourceFlags) ~= 0 then
-    if
-      combatEvent == "SPELL_CAST_SUCCESS"
-      or combatEvent == "SPELL_AURA_APPLIED"
-      or combatEvent == "SPELL_MISSED"
-      or combatEvent == "SPELL_SUMMON"
-    then
-      -- Timeleft Used - Trinket, RST_Racial, Reset // Not Used - Dispel, ETCCD, Racial
-      if CDTimeCache[spellID] then
-        CreateCooldownFrame(spellID, sourceGUID)
-        if not (NS.n_MAP["ETCCD"][spellID] or NS.n_MAP["Racial"][spellID]) then
-          if
-            (spellID == 42292 or spellID == 336126)
-            and NS.n_MAP["Trinket"][spellID]
-            and LHT.IsPlayerHealer(sourceGUID)
-          then
-            cooldown[sourceGUID][spellID].timeleft = CDTimeCache[spellID] - 30
-          else
-            cooldown[sourceGUID][spellID].timeleft = CDTimeCache[spellID]
+    for _, cds in pairs(NS.CDs) do
+      for spellId, cd in pairs(cds) do
+        if SpellNameByID[spellId] ~= nil then
+          AllCooldowns[spellId] = cd
+          if NS.db.global.SpellCDs[spellId] == nil then
+            NS.db.global.SpellCDs[spellId] = NS.GetDefaultDBEntryForSpell()
           end
         end
+      end
+    end
 
+    for spellID in pairs(AllCooldowns) do
+      if NS.db.global.SpellCDs[spellID] ~= nil and NS.db.global.SpellCDs[spellID].customCD ~= nil then
+        AllCooldowns[spellID] = NS.db.global.SpellCDs[spellID].customCD
+      end
+    end
+
+    -- delete invalid spells
+    for spellId in pairs(NS.db.global.SpellCDs) do
+      if SpellNameByID[spellId] == nil then
+        NS.db.global.SpellCDs[spellId] = nil
+      end
+    end
+  end
+end
+
+-------------------------------------------------------------------------------------------------
+----- Nameplates
+-------------------------------------------------------------------------------------------------
+do
+  local function SetIconPlace(frame, icon, iconIndex)
+    icon:ClearAllPoints()
+    local index = iconIndex == nil and frame.NCIconsCount or (iconIndex - 1)
+    if index == 0 then
+      if NS.db.global.growDirection == "RIGHT" then
+        icon:SetPoint("LEFT", frame.NCFrame, "LEFT", 0, 0)
+      elseif NS.db.global.growDirection == "LEFT" then
+        icon:SetPoint("RIGHT", frame.NCFrame, "RIGHT", 0, 0)
+      end
+    else
+      if NS.db.global.growDirection == "RIGHT" then
+        icon:SetPoint("LEFT", frame.NCIcons[index], "RIGHT", NS.db.global.iconSpacing, 0)
+      elseif NS.db.global.growDirection == "LEFT" then
+        icon:SetPoint("RIGHT", frame.NCIcons[index], "LEFT", -NS.db.global.iconSpacing, 0)
+      end
+    end
+  end
+
+  local function SetFrameSize(frame)
+    local maxWidth, maxHeight = 0, 0
+    if frame.NCFrame then
+      for _, icon in pairs(frame.NCIcons) do
+        if icon.shown then
+          maxHeight = mmax(maxHeight, icon:GetHeight())
+          maxWidth = maxWidth + icon:GetWidth() + NS.db.global.iconSpacing
+        end
+      end
+    end
+    maxWidth = maxWidth - NS.db.global.iconSpacing
+    maxHeight = maxHeight -- maxHeight - NS.db.global.iconSpacing
+    frame.NCFrame:SetWidth(mmax(maxWidth, 1))
+    frame.NCFrame:SetHeight(mmax(maxHeight, 1))
+  end
+
+  function HideCDIcon(icon, frame)
+    icon.border:Hide()
+    icon.borderState = nil
+    icon:Hide()
+    icon.shown = false
+    icon.textureID = 0
+    SetFrameSize(frame)
+  end
+
+  function ShowCDIcon(icon, frame)
+    icon:Show()
+    icon.shown = true
+    SetFrameSize(frame)
+  end
+
+  local function GetNameplateAddonFrame(nameplate)
+    local frame = nameplate
+    if Plater and frame.UnitFrame and frame.UnitFrame.PlaterOnScreen then
+      frame = frame.UnitFrame.healthBar
+    elseif frame.kui and frame.kui.bg and frame.kui:IsShown() then
+      frame = frame.kui.bg
+    elseif ElvUIPlayerNamePlateAnchor then
+      frame = ElvUIPlayerNamePlateAnchor
+    elseif frame.UnitFrame then
+      frame = frame.UnitFrame.healthBar
+    end
+
+    return frame
+  end
+
+  function AllocateIcon(frame)
+    if not frame.NCFrame then
+      frame.NCFrame = CreateFrame("frame", nil, frame)
+      frame.NCFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
+      frame.NCFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
+      frame.NCFrame:SetWidth(NS.db.global.iconSize)
+      frame.NCFrame:SetHeight(NS.db.global.iconSize)
+      local anchorFrame = GetNameplateAddonFrame(frame)
+      frame.NCFrame:SetPoint(
+        NS.db.global.anchor,
+        anchorFrame,
+        NS.db.global.anchorTo,
+        NS.db.global.offsetX,
+        NS.db.global.offsetY
+      )
+      frame.NCFrame:Show()
+    end
+    local icon = CreateFrame("frame", nil, frame.NCFrame)
+    icon:SetWidth(NS.db.global.iconSize)
+    icon:SetHeight(NS.db.global.iconSize)
+    SetIconPlace(frame, icon)
+    icon:Hide()
+
+    icon.cooldownFrame = CreateFrame("Cooldown", nil, icon, "CooldownFrameTemplate")
+    icon.cooldownFrame:SetAllPoints(icon)
+    icon.cooldownFrame:SetReverse(true)
+    -- icon.cooldownFrame:SetHideCountdownNumbers(true)
+    -- icon.cooldownFrame.noCooldownCount = true -- refuse OmniCC
+
+    icon.texture = icon:CreateTexture(nil, "BORDER")
+    icon.texture:SetAllPoints(icon)
+    icon.border = icon:CreateTexture(nil, "OVERLAY")
+    icon.border:SetTexture("Interface\\AddOns\\NameplateTrinket\\CooldownFrameBorder.tga")
+    icon.border:SetVertexColor(1, 0.35, 0)
+    icon.border:SetAllPoints(icon)
+    icon.border:Hide()
+    frame.NCIconsCount = frame.NCIconsCount + 1
+    tinsert(frame.NCIcons, icon)
+  end
+
+  function ReallocateAllIcons(clearSpells)
+    for frame in pairs(Nameplates) do
+      if frame.NCFrame then
+        frame.NCFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
+        frame.NCFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
+        frame.NCFrame:ClearAllPoints()
+        local anchorFrame = GetNameplateAddonFrame(frame)
+        frame.NCFrame:SetPoint(
+          NS.db.global.anchor,
+          anchorFrame,
+          NS.db.global.anchorTo,
+          NS.db.global.offsetX,
+          NS.db.global.offsetY
+        )
+        local counter = 0
+        for iconIndex, icon in pairs(frame.NCIcons) do
+          icon:SetWidth(NS.db.global.iconSize)
+          icon:SetHeight(NS.db.global.iconSize)
+          SetIconPlace(frame, icon, iconIndex)
+          icon.texture:SetTexCoord(0, 1, 0, 1)
+          if clearSpells then
+            HideCDIcon(icon, frame)
+          end
+          counter = counter + 1
+        end
+        SetFrameSize(frame)
+      end
+    end
+    if clearSpells then
+      OnUpdate()
+    end
+  end
+
+  local function GlobalFilterNameplate(unitGUID)
+    if not NS.db.global.targetOnly or UnitGUID("target") == unitGUID then
+      local matchesInstance = true
+      if matchesInstance then
+        return true
+      end
+    end
+    return false
+  end
+
+  local CDSortFunctions = {
+    [SORT_MODE_NONE] = function() end,
+    [SORT_MODE_TRINKET_INTERRUPT_OTHER] = function(item1, item2)
+      if Trinkets[item1.spellID] then
+        if Trinkets[item2.spellID] then
+          return item1.expires < item2.expires
+        else
+          return true
+        end
+      elseif Trinkets[item2.spellID] then
+        return false
+      elseif Interrupts[item1.spellID] then
+        if Interrupts[item2.spellID] then
+          return item1.expires < item2.expires
+        else
+          return true
+        end
+      elseif Interrupts[item2.spellID] then
+        return false
+      else
+        return item1.expires < item2.expires
+      end
+    end,
+    [SORT_MODE_INTERRUPT_TRINKET_OTHER] = function(item1, item2)
+      if Interrupts[item1.spellID] then
+        if Interrupts[item2.spellID] then
+          return item1.expires < item2.expires
+        else
+          return true
+        end
+      elseif Interrupts[item2.spellID] then
+        return false
+      elseif Trinkets[item1.spellID] then
+        if Trinkets[item2.spellID] then
+          return item1.expires < item2.expires
+        else
+          return true
+        end
+      elseif Trinkets[item2.spellID] then
+        return false
+      else
+        return item1.expires < item2.expires
+      end
+    end,
+    [SORT_MODE_TRINKET_OTHER] = function(item1, item2)
+      if Trinkets[item1.spellID] then
+        if Trinkets[item2.spellID] then
+          return item1.expires < item2.expires
+        else
+          return true
+        end
+      elseif Trinkets[item2.spellID] then
+        return false
+      else
+        return item1.expires < item2.expires
+      end
+    end,
+    [SORT_MODE_INTERRUPT_OTHER] = function(item1, item2)
+      if Interrupts[item1.spellID] then
+        if Interrupts[item2.spellID] then
+          return item1.expires < item2.expires
+        else
+          return true
+        end
+      elseif Interrupts[item2.spellID] then
+        return false
+      else
+        return item1.expires < item2.expires
+      end
+    end,
+  }
+
+  local function SortAuras(cds)
+    local t = {}
+    for _, spellInfo in pairs(cds) do
+      if spellInfo ~= nil then
+        t[#t + 1] = spellInfo
+      end
+    end
+    tsort(t, CDSortFunctions["trinket-other"])
+    return t
+  end
+
+  local function SetBorder(icon, spellID, isActive)
+    if isActive and Trinkets[spellID] then
+      if icon.borderState ~= 2 then
+        icon.border:SetVertexColor(1, 0.843, 0, 1)
+        icon.border:Show()
+        icon.borderState = 2
+      end
+    elseif icon.borderState ~= nil then
+      icon.border:Hide()
+      icon.borderState = nil
+    end
+  end
+
+  local function SetCooldown(icon, started, cooldownLength, isActive)
+    -- cooldown animation
+    if isActive then
+      if started ~= icon.cooldownStarted or cooldownLength ~= icon.cooldownLength then
+        icon.cooldownFrame:SetCooldown(started, cooldownLength)
+        icon.cooldownFrame:Show()
+        icon.cooldownStarted = started
+        icon.cooldownLength = cooldownLength
+      end
+    else
+      icon.cooldownFrame:Hide()
+    end
+  end
+
+  local function SetTexture(icon, texture, isActive)
+    if icon.textureID ~= texture then
+      icon.texture:SetTexture(texture)
+      icon.textureID = texture
+    end
+    if icon.desaturation ~= not isActive then
+      icon.texture:SetDesaturated(not isActive)
+      icon.desaturation = not isActive
+    end
+  end
+
+  local MinCdDuration = 0
+  local MaxCdDuration = 10 * 3600
+
+  local function FilterSpell(_dbInfo, _remain, _isActiveCD, spellID)
+    if not _dbInfo or not _dbInfo.enabled then
+      return false
+    end
+
+    if not _isActiveCD then
+      return false
+    end
+
+    if NS.db.global.trinketOnly and spellID ~= SPELL_PVPTRINKET then
+      return false
+    end
+
+    if _remain > 0 and (_remain < MinCdDuration or _remain > MaxCdDuration) then
+      return false
+    end
+
+    return true
+  end
+
+  function UpdateOnlyOneNameplate(frame, unitGUID)
+    if unitGUID == LocalPlayerGUID then
+      return
+    end
+    local counter = 1
+    if GlobalFilterNameplate(unitGUID) then
+      if SpellsPerPlayerGUID[unitGUID] then
+        local currentTime = GetTime()
+        local sortedCDs = SortAuras(SpellsPerPlayerGUID[unitGUID])
+        for _, spellInfo in pairs(sortedCDs) do
+          local spellID = spellInfo.spellID
+          local isActiveCD = spellInfo.expires > currentTime
+          local dbInfo = NS.db.global.SpellCDs[spellID]
+          local remain = spellInfo.expires - currentTime
+          if FilterSpell(dbInfo, remain, isActiveCD, spellID) then
+            if counter > frame.NCIconsCount then
+              AllocateIcon(frame)
+            end
+            local icon = frame.NCIcons[counter]
+            SetTexture(icon, spellInfo.texture, isActiveCD)
+            local cooldown = AllCooldowns[spellID]
+            SetCooldown(icon, spellInfo.started, cooldown, isActiveCD)
+            SetBorder(icon, spellID, isActiveCD)
+            if not icon.shown then
+              ShowCDIcon(icon, frame)
+            end
+            counter = counter + 1
+          end
+        end
+      end
+    end
+    for k = counter, frame.NCIconsCount do
+      local icon = frame.NCIcons[k]
+      if icon.shown then
+        HideCDIcon(icon, frame)
+      end
+    end
+  end
+end
+
+-------------------------------------------------------------------------------------------------
+----- OnUpdates
+-------------------------------------------------------------------------------------------------
+do
+  function OnUpdate()
+    for frame, unitGUID in pairs(NameplatesVisible) do
+      UpdateOnlyOneNameplate(frame, unitGUID)
+    end
+  end
+end
+
+-------------------------------------------------------------------------------------------------
+----- Test mode
+-------------------------------------------------------------------------------------------------
+do
+  local _t = 0
+  local _charactersDB
+  local _spellCDs
+  local _spellIDs = {
+    [378464] = 90,
+    [20589] = 60,
+    [354489] = 20,
+  }
+
+  local function refreshCDs()
+    local cTime = GetTime()
+    for _, unitGUID in pairs(NameplatesVisible) do
+      if not SpellsPerPlayerGUID[unitGUID] then
+        SpellsPerPlayerGUID[unitGUID] = {}
+      end
+      SpellsPerPlayerGUID[unitGUID][SPELL_PVPTRINKET] = {
+        ["spellID"] = SPELL_PVPTRINKET,
+        ["expires"] = cTime + 120,
+        ["texture"] = SpellTextureByID[SPELL_PVPTRINKET],
+        ["started"] = cTime,
+      } -- // 2m test
+      if not NS.db.global.trinketOnly then
+        for spellID, cd in pairs(_spellIDs) do
+          if not SpellsPerPlayerGUID[unitGUID][spellID] then
+            SpellsPerPlayerGUID[unitGUID][spellID] = {
+              ["spellID"] = spellID,
+              ["expires"] = cTime + cd,
+              ["texture"] = SpellTextureByID[spellID],
+              ["started"] = cTime,
+            }
+          else
+            if cTime - SpellsPerPlayerGUID[unitGUID][spellID]["expires"] > 0 then
+              SpellsPerPlayerGUID[unitGUID][spellID] = {
+                ["spellID"] = spellID,
+                ["expires"] = cTime + cd,
+                ["texture"] = SpellTextureByID[spellID],
+                ["started"] = cTime,
+              }
+            end
+          end
+        end
+      end
+    end
+  end
+
+  function NS.EnableTestMode()
+    if not IsInInstance() and not NS.IN_DUEL then
+      for nameplate, _ in pairs(Nameplates) do
+        nameplate.NCFrame = nil
+        nameplate.NCIcons = {}
+        nameplate.NCIconsCount = 0 -- // it's faster than #nameplate.NCIcons
+        Nameplates[nameplate] = true
+        NameplatesVisible[nameplate] = nil
+      end
+
+      -- https://warcraft.wiki.gg/wiki/API_C_NamePlate.GetNamePlates
+      -- https://github.com/tomrus88/BlizzardInterfaceCode/blob/master/Interface/AddOns/Blizzard_NamePlates/Blizzard_NamePlates.lua#L264
+      for _, nameplate in pairs(GetNamePlates(issecure())) do
+        local unitID = nameplate.namePlateUnitToken
+        local unitGUID = UnitGUID(unitID)
         if
-          (spellID == 42292 or spellID == 336126)
-          and NS.n_MAP["Trinket"][spellID]
-          and LHT.IsPlayerHealer(sourceGUID)
+          nameplate
+          and unitGUID
+          and unitGUID ~= LocalPlayerGUID
+          and GUIDIsPlayer(unitGUID)
+          and not NameplatesVisible[nameplate]
         then
-          cooldown[sourceGUID][spellID].c:SetCooldown(GetTime(), CDTimeCache[spellID] - 30)
-          cooldown[sourceGUID][spellID]._font:SetCooldown(GetTime(), CDTimeCache[spellID] - 30)
-        else
-          cooldown[sourceGUID][spellID].c:SetCooldown(GetTime(), CDTimeCache[spellID])
-          cooldown[sourceGUID][spellID]._font:SetCooldown(GetTime(), CDTimeCache[spellID])
+          NameplatesVisible[nameplate] = unitGUID
+          if not Nameplates[nameplate] then
+            nameplate.NCFrame = nil
+            nameplate.NCIcons = {}
+            nameplate.NCIconsCount = 0 -- // it's faster than #nameplate.NCIcons
+            Nameplates[nameplate] = true
+          end
         end
-        --if spellID == 362699 then -- echoing
-        --  cooldown[sourceGUID][spellID]:Show()
-        --end
       end
-      --if spellID == 195710 or spellID == 208683 or spellID == 195901 then
-      if spellID == 42292 or spellID == 336126 or spellID == 336139 then
-        local race = select(4, GetPlayerInfoByGUID(sourceGUID))
-        if race == "Scourge" then -- Undead
-          CreateRacialnTrinket(sourceGUID, 7744, 7744)
-        elseif race == "Dwarf" then
-          CreateRacialnTrinket(sourceGUID, 65116, 65116)
-        elseif race == "DarkIronDwarf" then
-          CreateRacialnTrinket(sourceGUID, 273104, 273104)
-        elseif race == "Human" then
-          CreateRacialnTrinket(sourceGUID, 59752, 59752)
-        end
-      elseif spellID == 7744 or spellID == 65116 or spellID == 273104 then
-        CreateRacialnTrinket(sourceGUID, 336126, 336126)
-      elseif spellID == 59752 then
-        CreateRacialnTrinket(sourceGUID, 336126, spellID)
+
+      NameplateTrinketFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
+      NameplateTrinketFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
+    end
+
+    _charactersDB = NS.deepcopy(SpellsPerPlayerGUID)
+    _spellCDs = NS.deepcopy(NS.db.global.SpellCDs)
+    NS.db.global.SpellCDs[SPELL_PVPTRINKET] = NS.GetDefaultDBEntryForSpell()
+    NS.db.global.SpellCDs[SPELL_PVPTRINKET].enabled = true
+    if not NS.db.global.trinketOnly then
+      for spellID in pairs(_spellIDs) do
+        NS.db.global.SpellCDs[spellID] = NS.GetDefaultDBEntryForSpell()
+        NS.db.global.SpellCDs[spellID].enabled = true
       end
     end
+    if not TestFrame then
+      TestFrame = CreateFrame("frame")
+      TestFrame:SetScript("OnEvent", function()
+        NS.DisableTestMode()
+      end)
+    end
+    TestFrame:SetScript("OnUpdate", function(_, elapsed)
+      _t = _t + elapsed
+      if _t >= 2 then
+        refreshCDs()
+        _t = 0
+      end
+    end)
+    refreshCDs() -- // for instant start
+    OnUpdate() -- // for instant start
+    NS.TestModeActive = true
   end
-end
 
-function NameplateTrinket:NAME_PLATE_UNIT_ADDED(unitID)
-  local guid = UnitGUID(unitID)
-  if guid then
-    npUnitID[guid] = unitID
+  function NS.DisableTestMode()
+    if not IsInInstance() and not NS.IN_DUEL then
+      NameplateTrinketFrame:UnregisterEvent("NAME_PLATE_UNIT_ADDED")
+      NameplateTrinketFrame:UnregisterEvent("NAME_PLATE_UNIT_REMOVED")
+    end
+
+    TestFrame:SetScript("OnUpdate", nil)
+    SpellsPerPlayerGUID = NS.deepcopy(_charactersDB)
+    NS.db.global.SpellCDs = NS.deepcopy(_spellCDs)
+    OnUpdate() -- // for instant start
+    NS.TestModeActive = false
   end
-end
 
-function NameplateTrinket:NAME_PLATE_UNIT_REMOVED(unitID)
-  local guid = UnitGUID(unitID)
-  if guid then
-    npUnitID[guid] = nil
-  end
-end
-
-local function UpdateFrame(g_tb, sel, elapsed)
-  elapsed = elapsed or 0
-  local alpha, scale
-  for n, tb in pairs(g_tb) do -- n = guid
-    if NS.db.global.pSetting.pEnable and sel and n == PGUID then
-      local offset = (isTarget(PGUID, "target") and NS.db.global.Func.Trinket and NS.db.global.Func.Racial) and 3
-        or (isTarget(PGUID, "target") and (NS.db.global.Func.Trinket or NS.db.global.Func.Racial)) and 2
-        or 1
-      local PCNT = 0
-      alpha = NS.db.global.gSetting.TargetAlpha
-      scale = NS.db.global.pSetting.pScale
-
-      for _, fr in pairs(tb) do
-        fr:ClearAllPoints()
-        if fr.c:IsVisible() then
-          fr:SetAlpha(alpha)
-          fr:SetScale(scale)
-          fr:SetPoint(
-            "TOPLEFT",
-            "PlayerFrame",
-            "TOPLEFT",
-            NS.db.global.pSetting.pxOfs
-              + ((NS.db.global.gSetting.FrameSize + 2) * offset)
-              + (NS.db.global.gSetting.FrameSize + 2) * PCNT,
-            NS.db.global.pSetting.pyOfs + NS.db.global.gSetting.FrameSize * 2
-          )
-          PCNT = PCNT + 1
-        else
-          fr:SetPoint("TOP", UIParent, "TOP", 0, 100)
-        end
+  NS.OnDbChanged = function(clearSpells)
+    if NS.db.global.targetOnly then
+      if IsInInstance() then
+        NameplateTrinketFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
       end
     else
-      local pl
-      for guid, unitID in pairs(npUnitID) do
-        if n == guid then
-          pl = GetNamePlateForUnit(unitID)
-          break
-        end
-      end
+      NameplateTrinketFrame:UnregisterEvent("PLAYER_TARGET_CHANGED")
+    end
 
-      if pl then
-        local SCNT = 0
-        if isTarget(n, "target") or isTarget(n, "focus") then
-          alpha = NS.db.global.gSetting.TargetAlpha
-          scale = NS.db.global.gSetting.TargetScale
-        else
-          alpha = NS.db.global.gSetting.OtherAlpha
-          scale = NS.db.global.gSetting.OtherScale
-        end
-
-        for id, fr in pairs(tb) do -- id = spellid, category
-          fr:ClearAllPoints()
-          if not sel and fr.timeleft then
-            if fr.timeleft <= 0 then
-              fr.timeleft = 0
-            else
-              fr.timeleft = fr.timeleft - elapsed
-            end
-          end
-          if fr.c:IsVisible() then
-            fr:SetAlpha(alpha)
-            fr:SetScale(scale)
-            fr._font:SetAlpha(alpha)
-
-            if sel then
-              if
-                NS.db.global.Group.taunt
-                or NS.db.global.Group.incapacitate
-                or NS.db.global.Group.silence
-                or NS.db.global.Group.disorient
-                or NS.db.global.Group.stun
-                or NS.db.global.Group.root
-                or NS.db.global.Group.knockback
-                or NS.db.global.Group.disarm
-              then
-                local offsetX = (NS.db.global.Func.Trinket and NS.db.global.Func.Racial) and 3
-                  or not (NS.db.global.Func.Trinket and NS.db.global.Func.Racial) and 1
-                  or 2
-                fr:SetPoint(
-                  "RIGHT",
-                  pl,
-                  "RIGHT",
-                  NS.db.global.gSetting.xOfs
-                    + (NS.db.global.gSetting.FrameSize * offsetX)
-                    + NS.db.global.gSetting.FrameSize * SCNT,
-                  NS.db.global.gSetting.yOfs
-                )
-                SCNT = SCNT + 1
-              else
-                fr:SetPoint("TOP", UIParent, "TOP", 0, 100)
-              end
-            else
-              local attachFrame = (NS.db.global.pSetting.pEnable and n == PGUID) and "PlayerFrame" or pl
-              local attachPoint = (NS.db.global.pSetting.pEnable and n == PGUID) and "TOPLEFT" or "RIGHT"
-              local attachX = (NS.db.global.pSetting.pEnable and n == PGUID)
-                  and (NS.db.global.pSetting.pxOfs + (NS.db.global.gSetting.FrameSize + 2))
-                or (NS.db.global.gSetting.xOfs + NS.db.global.gSetting.FrameSize)
-              local attachY = (NS.db.global.pSetting.pEnable and n == PGUID)
-                  and (NS.db.global.pSetting.pyOfs + NS.db.global.gSetting.FrameSize * 2)
-                or NS.db.global.gSetting.yOfs
-              if NS.db.global.Func.Trinket and NS.n_MAP["Trinket"][id] then
-                fr:SetPoint(attachPoint, attachFrame, attachPoint, attachX, attachY)
-              elseif NS.db.global.Func.Racial and (NS.n_MAP["Racial"][id] or NS.n_MAP["RST_Racial"][id]) then
-                local offsetX = NS.db.global.Func.Trinket and 2 or 1
-                fr:SetPoint(attachPoint, attachFrame, attachPoint, attachX * offsetX, attachY)
-              else
-                fr:SetPoint("TOP", UIParent, "TOP", 0, 100)
-              end
-            end
-          else
-            fr:SetPoint("TOP", UIParent, "TOP", 0, 100)
-          end
+    if clearSpells then
+      if not IsInInstance() then
+        if NS.db.global.test then
+          -- maybe new function to wipe non-trinket test spells only
+          NS.DisableTestMode()
+          NS.EnableTestMode()
         end
       else
-        for _, fr in pairs(tb) do
-          fr:ClearAllPoints()
-          fr:SetPoint("TOP", UIParent, "TOP", 0, 100)
-        end
+        OnUpdate()
       end
+    end
+
+    if not IsInInstance() then
+      ReallocateAllIcons(true)
     end
   end
 end
 
-function OnUpdate(_, elapsed)
-  getUpdate = getUpdate + elapsed
-  if getUpdate > UPDATE_INTERVAL then
-    UpdateFrame(gradual, true)
-    UpdateFrame(cooldown, false, getUpdate)
-    getUpdate = 0
-  end
-end
-
-function NameplateTrinket:PLAYER_LOGIN()
-  NameplateTrinketFrame:UnregisterEvent("PLAYER_LOGIN")
-
-  for str in pairs(NS.n_MAP) do
-    for sp, tm in pairs(NS.n_MAP[str]) do
-      if C_Spell.GetSpellName(sp) then
-        if str == "Reset" then
-          RSTimeCache[sp] = tm
-        else
-          CDTimeCache[sp] = tm
+-------------------------------------------------------------------------------------------------
+----- Frame for events
+-------------------------------------------------------------------------------------------------
+do
+  function NameplateTrinket:COMBAT_LOG_EVENT_UNFILTERED()
+    local cTime = GetTime()
+    local _, eventType, _, srcGUID, _, srcFlags, _, _, _, _, _, spellID = CombatLogGetCurrentEventInfo()
+    if
+      bband(srcFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) ~= 0
+      or (NS.db.global.showOnAllies == true and srcGUID ~= LocalPlayerGUID)
+    then
+      if NS.db.global.trinketOnly then
+        if spellID == SPELL_PVPTRINKET then
+          local entry = NS.db.global.SpellCDs[SPELL_PVPTRINKET]
+          local cooldown = AllCooldowns[SPELL_PVPTRINKET]
+          if cooldown ~= nil and entry and entry.enabled then
+            if
+              eventType == "SPELL_CAST_SUCCESS"
+              or eventType == "SPELL_AURA_APPLIED"
+              or eventType == "SPELL_MISSED"
+              or eventType == "SPELL_SUMMON"
+            then
+              if not SpellsPerPlayerGUID[srcGUID] then
+                SpellsPerPlayerGUID[srcGUID] = {}
+              end
+              local expires = cTime + cooldown
+              SpellsPerPlayerGUID[srcGUID][SPELL_PVPTRINKET] = {
+                ["spellID"] = SPELL_PVPTRINKET,
+                ["expires"] = expires,
+                ["texture"] = SpellTextureByID[SPELL_PVPTRINKET],
+                ["started"] = cTime,
+              }
+              for frame, unitGUID in pairs(NameplatesVisible) do
+                if unitGUID == srcGUID then
+                  UpdateOnlyOneNameplate(frame, unitGUID)
+                  break
+                end
+              end
+            end
+          end
         end
-        CDTextureCache[sp] = C_Spell.GetSpellTexture(sp)
       else
-        DEFAULT_CHAT_FRAME:AddMessage("|c00008000NameplateTrinket|r n_MAP[" .. str .. "] " .. sp)
+        local entry = NS.db.global.SpellCDs[spellID]
+        local cooldown = AllCooldowns[spellID]
+        if cooldown ~= nil and entry and entry.enabled then
+          if
+            eventType == "SPELL_CAST_SUCCESS"
+            or eventType == "SPELL_AURA_APPLIED"
+            or eventType == "SPELL_MISSED"
+            or eventType == "SPELL_SUMMON"
+          then
+            if not SpellsPerPlayerGUID[srcGUID] then
+              SpellsPerPlayerGUID[srcGUID] = {}
+            end
+            local expires = cTime + cooldown
+            SpellsPerPlayerGUID[srcGUID][spellID] = {
+              ["spellID"] = spellID,
+              ["expires"] = expires,
+              ["texture"] = SpellTextureByID[spellID],
+              ["started"] = cTime,
+            }
+            for frame, unitGUID in pairs(NameplatesVisible) do
+              if unitGUID == srcGUID then
+                UpdateOnlyOneNameplate(frame, unitGUID)
+                break
+              end
+            end
+          end
+        end
+      end
+      -- reset
+      if eventType == "SPELL_AURA_APPLIED" and spellID == SPELL_RESET then
+        if SpellsPerPlayerGUID[srcGUID] then
+          SpellsPerPlayerGUID[srcGUID] = {}
+          for frame, unitGUID in pairs(NameplatesVisible) do
+            if unitGUID == srcGUID then
+              UpdateOnlyOneNameplate(frame, unitGUID)
+              break
+            end
+          end
+        end
+      -- // pvptier 1/2 used, correcting cd of PvP trinket
+      elseif
+        eventType == "SPELL_AURA_APPLIED"
+        and spellID == SPELL_PVPADAPTATION
+        and NS.db.global.SpellCDs[SPELL_PVPTRINKET] ~= nil
+        and NS.db.global.SpellCDs[SPELL_PVPTRINKET].enabled
+      then
+        if SpellsPerPlayerGUID[srcGUID] then
+          SpellsPerPlayerGUID[srcGUID][SPELL_PVPTRINKET] = {
+            ["spellID"] = SPELL_PVPTRINKET,
+            ["expires"] = cTime + 60,
+            ["texture"] = SpellTextureByID[SPELL_PVPTRINKET],
+            ["started"] = cTime,
+          }
+          for frame, unitGUID in pairs(NameplatesVisible) do
+            if unitGUID == srcGUID then
+              UpdateOnlyOneNameplate(frame, unitGUID)
+              break
+            end
+          end
+        end
+      -- caster is a healer, reducing cd of pvp trinket
+      elseif
+        eventType == "SPELL_CAST_SUCCESS"
+        and spellID == SPELL_PVPTRINKET
+        and NS.db.global.SpellCDs[SPELL_PVPTRINKET] ~= nil
+        and NS.db.global.SpellCDs[SPELL_PVPTRINKET].enabled
+        and LHT.IsPlayerHealer(srcGUID)
+      then
+        if SpellsPerPlayerGUID[srcGUID] then
+          local existingEntry = SpellsPerPlayerGUID[srcGUID][SPELL_PVPTRINKET]
+          if existingEntry then
+            existingEntry.expires = existingEntry.expires - 30
+            for frame, unitGUID in pairs(NameplatesVisible) do
+              if unitGUID == srcGUID then
+                UpdateOnlyOneNameplate(frame, unitGUID)
+                break
+              end
+            end
+          end
+        end
       end
     end
   end
 
-  CDTextureCache[336139] = "Interface\\Icons\\Sha_ability_rogue_sturdyrecuperate" -- Adaptation
-  -- CDTextureCache[196029] = "Interface\\Icons\\Ability_bossdarkvindicator_auraofcontempt" -- Relentless
+  function NameplateTrinket:NAME_PLATE_UNIT_ADDED(unitID)
+    local nameplate = GetNamePlateForUnit(unitID)
+    local unitGUID = UnitGUID(unitID)
+    if nameplate and unitGUID and GUIDIsPlayer(unitGUID) then
+      NameplatesVisible[nameplate] = unitGUID
+      if not Nameplates[nameplate] then
+        nameplate.NCIcons = {}
+        nameplate.NCIconsCount = 0 -- // it's faster than #nameplate.NCIcons
+        Nameplates[nameplate] = true
+      end
+      if nameplate.NCFrame ~= nil and unitGUID ~= LocalPlayerGUID then
+        nameplate.NCFrame:Show()
+      end
+      UpdateOnlyOneNameplate(nameplate, unitGUID)
+    end
+  end
 
-  NameplateTrinketFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-  NameplateTrinketFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
-  NameplateTrinketFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
-  NameplateTrinketFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+  function NameplateTrinket:NAME_PLATE_UNIT_REMOVED(unitID)
+    local nameplate = GetNamePlateForUnit(unitID)
+    if nameplate and NameplatesVisible[nameplate] then
+      NameplatesVisible[nameplate] = nil
+      if nameplate.NCFrame ~= nil then
+        nameplate.NCFrame:Hide()
+      end
+    end
+  end
 
-  local TempFrame = CreateFrame("Frame")
-  TempFrame:SetScript("OnUpdate", OnUpdate)
+  function NameplateTrinket:PLAYER_TARGET_CHANGED()
+    ReallocateAllIcons(true)
+  end
+
+  function NameplateTrinket:PVP_MATCH_ACTIVE()
+    NS.Debug("PVP_MATCH_ACTIVE", IsInInstance())
+    wipe(SpellsPerPlayerGUID)
+  end
+
+  function NameplateTrinket:PVP_MATCH_COMPLETE()
+    NS.Debug("PVP_MATCH_COMPLETE", IsInInstance())
+    wipe(SpellsPerPlayerGUID)
+  end
+
+  -- we care about out of combat always out of instances
+  function NameplateTrinket:PLAYER_REGEN_ENABLED()
+    if not IsInInstance() and not NS.IN_DUEL then
+      wipe(SpellsPerPlayerGUID)
+      ReallocateAllIcons(false)
+
+      if NS.db.global.test then
+        NS.EnableTestMode()
+      end
+
+      NameplateTrinketFrame:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+      NameplateTrinketFrame:UnregisterEvent("NAME_PLATE_UNIT_ADDED")
+      NameplateTrinketFrame:UnregisterEvent("NAME_PLATE_UNIT_REMOVED")
+
+      if NS.db.global.targetOnly then
+        NameplateTrinketFrame:UnregisterEvent("PLAYER_TARGET_CHANGED")
+      end
+    end
+  end
+
+  -- we care about in combat always out of instances
+  function NameplateTrinket:PLAYER_REGEN_DISABLED()
+    if not IsInInstance() and not NS.IN_DUEL then
+      if NS.db.global.test and TestFrame then
+        NS.DisableTestMode()
+      end
+
+      NameplateTrinketFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+      NameplateTrinketFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
+      NameplateTrinketFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
+
+      if NS.db.global.targetOnly then
+        NameplateTrinketFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+      end
+    end
+  end
+
+  function NameplateTrinket:CHAT_MSG_SYSTEM(text)
+    NS.Debug("CHAT_MSG_SYSTEM", text, IsInInstance())
+    if not IsInInstance() then
+      if text == "Duel starting: 3" or text == "Duel starting: 2" or text == "Duel starting: 1" then
+        NameplateTrinketFrame:UnregisterEvent("CHAT_MSG_SYSTEM")
+
+        NS.IN_DUEL = true
+
+        if NS.db.global.test and TestFrame then
+          NS.DisableTestMode()
+        end
+
+        wipe(SpellsPerPlayerGUID)
+        ReallocateAllIcons(false)
+
+        NameplateTrinketFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+        NameplateTrinketFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
+        NameplateTrinketFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
+
+        if NS.db.global.targetOnly then
+          NameplateTrinketFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+        end
+      end
+    end
+  end
+
+  function NameplateTrinket:DUEL_FINISHED()
+    NS.Debug("DUEL_FINISHED", IsInInstance())
+    NameplateTrinketFrame:UnregisterEvent("CHAT_MSG_SYSTEM")
+    NS.IN_DUEL = false
+
+    wipe(SpellsPerPlayerGUID)
+    ReallocateAllIcons(false)
+
+    if not IsInInstance() then
+      if NS.db.global.test then
+        NS.EnableTestMode()
+      end
+
+      NameplateTrinketFrame:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+      NameplateTrinketFrame:UnregisterEvent("NAME_PLATE_UNIT_ADDED")
+      NameplateTrinketFrame:UnregisterEvent("NAME_PLATE_UNIT_REMOVED")
+
+      if NS.db.global.targetOnly then
+        NameplateTrinketFrame:UnregisterEvent("PLAYER_TARGET_CHANGED")
+      end
+    end
+  end
+
+  function NameplateTrinket:DUEL_REQUESTED(playerName)
+    NS.Debug("DUEL_REQUESTED", playerName)
+    NameplateTrinketFrame:RegisterEvent("CHAT_MSG_SYSTEM")
+  end
+
+  function NameplateTrinket:LOADING_SCREEN_DISABLED()
+    NS.Debug("LOADING_SCREEN_DISABLED", IsInInstance(), NS.IN_DUEL, NS.db.global.test)
+    if NS.db.global.test then
+      if not IsInInstance() and not NS.IN_DUEL then
+        wipe(SpellsPerPlayerGUID)
+        ReallocateAllIcons(true)
+
+        After(0, function()
+          if NS.db.global.test then
+            if not IsInInstance() and not NS.IN_DUEL then
+              NS.EnableTestMode()
+            end
+          end
+        end)
+      end
+    end
+  end
+
+  -- we onlu care about leaving world in instances
+  function NameplateTrinket:PLAYER_LEAVING_WORLD()
+    NS.Debug("PLAYER_LEAVING_WORLD", IsInInstance())
+    wipe(SpellsPerPlayerGUID)
+
+    if not IsInInstance() then
+      NameplateTrinketFrame:UnregisterEvent("PLAYER_LEAVING_WORLD")
+      NameplateTrinketFrame:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+      NameplateTrinketFrame:UnregisterEvent("NAME_PLATE_UNIT_ADDED")
+      NameplateTrinketFrame:UnregisterEvent("NAME_PLATE_UNIT_REMOVED")
+
+      if NS.db.global.targetOnly then
+        NameplateTrinketFrame:UnregisterEvent("PLAYER_TARGET_CHANGED")
+      end
+    end
+  end
+
+  function NameplateTrinket:PLAYER_ENTERING_WORLD()
+    NS.Debug("PLAYER_ENTERING_WORLD", IsInInstance(), NS.IN_DUEL, NS.db.global.test)
+    wipe(SpellsPerPlayerGUID)
+    ReallocateAllIcons(false)
+
+    LHT.Subscribe(function(_guid, _)
+      if SpellsPerPlayerGUID[_guid] then
+        local existingEntry = SpellsPerPlayerGUID[_guid][SPELL_PVPTRINKET]
+        if existingEntry then
+          existingEntry.expires = existingEntry.expires - 30
+          for frame, unitGUID in pairs(NameplatesVisible) do
+            if unitGUID == _guid then
+              UpdateOnlyOneNameplate(frame, unitGUID)
+              break
+            end
+          end
+        end
+      end
+    end)
+
+    if IsInInstance() then
+      if NS.db.global.test then
+        for nameplate, _ in pairs(Nameplates) do
+          nameplate.NCFrame = nil
+          nameplate.NCIcons = {}
+          nameplate.NCIconsCount = 0 -- // it's faster than #nameplate.NCIcons
+          Nameplates[nameplate] = true
+          NameplatesVisible[nameplate] = nil
+        end
+
+        if TestFrame then
+          NS.DisableTestMode()
+        end
+      end
+
+      NameplateTrinketFrame:RegisterEvent("PLAYER_LEAVING_WORLD")
+      NameplateTrinketFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+      NameplateTrinketFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
+      NameplateTrinketFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
+
+      if NS.db.global.targetOnly then
+        NameplateTrinketFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+      end
+    end
+  end
+
+  function NameplateTrinket:PLAYER_LOGIN()
+    NS.Debug("PLAYER_LOGIN", IsInInstance())
+    NameplateTrinketFrame:UnregisterEvent("PLAYER_LOGIN")
+
+    LocalPlayerGUID = UnitGUID("player")
+    NS.BuildCooldownValues()
+    -- // starting OnUpdate()
+    EventFrame:SetScript("OnUpdate", function(_, elapsed)
+      ElapsedTimer = ElapsedTimer + elapsed
+      if ElapsedTimer >= 1 then
+        OnUpdate()
+        ElapsedTimer = 0
+      end
+    end)
+
+    NameplateTrinketFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+    NameplateTrinketFrame:RegisterEvent("LOADING_SCREEN_DISABLED")
+
+    NameplateTrinketFrame:RegisterEvent("PVP_MATCH_ACTIVE")
+    NameplateTrinketFrame:RegisterEvent("PVP_MATCH_COMPLETE")
+    NameplateTrinketFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+    NameplateTrinketFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+    NameplateTrinketFrame:RegisterEvent("DUEL_REQUESTED")
+    NameplateTrinketFrame:RegisterEvent("DUEL_FINISHED")
+  end
+  NameplateTrinketFrame:RegisterEvent("PLAYER_LOGIN")
+
+  function Options_SlashCommands(message)
+    if message == "test" then
+      if not NS.TestModeActive then
+        if IsInInstance() then
+          print("Can't test while in an instance")
+        else
+          NS.EnableTestMode()
+        end
+      else
+        NS.DisableTestMode()
+      end
+    else
+      LibStub("AceConfigDialog-3.0"):Open(AddonName)
+    end
+  end
+
+  function Options_Setup()
+    LibStub("AceConfig-3.0"):RegisterOptionsTable(AddonName, NS.AceConfig)
+    LibStub("AceConfigDialog-3.0"):AddToBlizOptions(AddonName, AddonName)
+
+    SLASH_NPC1 = AddonName
+    SLASH_NPC2 = "/npc"
+
+    function SlashCmdList.NPC(message)
+      Options_SlashCommands(message)
+    end
+  end
+
+  function NameplateTrinket:ADDON_LOADED(addon)
+    NameplateTrinketFrame:UnregisterEvent("ADDON_LOADED")
+
+    if addon == AddonName then
+      NS.Debug("ADDON_LOADED")
+      NameplateTrinketFrame:UnregisterEvent("ADDON_LOADED")
+
+      NameplateTrinketDB = NameplateTrinketDB and next(NameplateTrinketDB) ~= nil and NameplateTrinketDB or {}
+
+      -- Copy any settings from default if they don't exist in current profile
+      NS.CopyDefaults(NS.DefaultDatabase, NameplateTrinketDB)
+
+      -- Reference to active db profile
+      -- Always use this directly or reference will be invalid
+      NS.db = NameplateTrinketDB
+
+      -- Remove table values no longer found in default settings
+      NS.CleanupDB(NameplateTrinketDB, NS.DefaultDatabase)
+
+      Options_Setup()
+    end
+  end
+  NameplateTrinketFrame:RegisterEvent("ADDON_LOADED")
 end
-NameplateTrinketFrame:RegisterEvent("PLAYER_LOGIN")

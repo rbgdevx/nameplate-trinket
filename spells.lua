@@ -1,98 +1,69 @@
-﻿local _, NS = ...
+local _, NS = ...
 
-NS.n_MAP = {
+NS.CDs = {
   ["Trinket"] = {
-    -- [195710] = 180, -- Honorable Medallion
-    -- [208683] = 120, -- Gladiator's Medallion
-    -- [195901] = 60, -- Adapted
-    -- [196029] = -1, -- Relentless
-    [42292] = 120, -- Item Trinket PvP Trinket Account attribution (Require Texture setting)
-    [336126] = 120, -- Item Trinket Gladiator's Medallion -- DEFAULT
-    [336139] = 60, -- Item Trinket Adapted
-    [336128] = -1, -- Item Trinket Relentless
-    -- [283167] = 60, -- Item Trinket Adapted
-    -- [363117] = 180, -- Item Trinket 9.2 Gladiator's Resolve ID(362699)
-    -- [363121] = 12, -- Item Trinket 9.2 Gladiator's Echoing Resolve
-    -- [362699] = 12, -- Item Trinket 9.2 Gladiator's Echoing Resolve
-  },
-  ["RST_Racial"] = {
-    [59752] = 180, -- Every Man for Himself (Human) -- DEFAULT
-    [7744] = 120, -- Will of the Forsaken (Undead(Scourge))
-    [65116] = 120, -- Stoneform (Dwarf)
-    [273104] = 120, -- Fireblood (Dark Iron Dwarf) 265221(x)
+    [42292] = 120, -- PvP Trinket -- https://www.wowhead.com/spell=42292/pvp-trinket
+    [336126] = 120, -- Gladiator's Medallion -- https://www.wowhead.com/spell=336126/gladiators-medallion
+    [336139] = 60, -- Adapted -- https://www.wowhead.com/spell=336139/adapted
+    [283167] = 60, -- PvP Trinket -- https://www.wowhead.com/spell=283167/pvp-trinket
+    -- [195710] = 180, -- Honorable Medallion -- https://www.wowhead.com/spell=195710/honorable-medallion -- Spell Modifier
+    -- [363117] = 180, -- Gladiator's Fastidious Resolve -- https://www.wowhead.com/spell=363117/gladiators-fastidious-resolve
+    -- [363121] = 12, -- Gladiator's Echoing Resolve -- https://www.wowhead.com/spell=363121/gladiators-echoing-resolve
+    -- [208683] = 120, -- Gladiator's Medallion -- https://www.wowhead.com/spell=208683/gladiators-medallion
+    -- [362699] = 12, -- Gladiator's Resolve -- https://www.wowhead.com/spell=362699/gladiators-resolve
+    -- [196029] = -1, -- Relentless -- https://www.wowhead.com/spell=196029/relentless
+    -- [336128] = -1, -- Relentless -- https://www.wowhead.com/spell=336128/relentless
+    -- [195901] = 60, -- Adapted -- https://www.wowhead.com/spell=195901/adapted
   },
   ["Racial"] = {
-    [33697] = 120, -- Blood Fury (Orc Shaman, Monk)
-    [33702] = 120, -- Blood Fury (Orc Mage, Warlock)
-    [20572] = 120, -- Blood Fury (Orc Warrior, Hunter, Rogue, Death Knight)
-    [26297] = 180, -- Berserking (Troll)
-    [20549] = 90, -- War Stomp (Tauren)
-    [69070] = 90, -- Rocket Jump (Goblin)
-    -- [69041] = 90, -- Rocket Barrage (Goblin)
-    [107079] = 120, -- Quaking Palm (Pandaren)
-    [58984] = 120, -- Shadowmeld (Night Elf)
-    [20589] = 60, -- Escape Artist (Gnome)
-    [68992] = 120, -- Darkflight (Worgen)
-
-    [59545] = 180, -- Gift of the Naaru (Draenei Death Knight)
-    [59543] = 180, -- Gift of the Naaru (Draenei Hunter)
-    [59548] = 180, -- Gift of the Naaru (Draenei Mage)
-    [121093] = 180, -- Gift of the Naaru (Draenei Monk)
-    [59542] = 180, -- Gift of the Naaru (Draenei Paladin)
-    [59544] = 180, -- Gift of the Naaru (Draenei Priest)
-    [59547] = 180, -- Gift of the Naaru (Draenei Shaman)
-    [28880] = 180, -- Gift of the Naaru (Draenei Warrior)
-
-    [255654] = 120, -- Bull Rush (Highmountain Tauren)
-    [260364] = 180, -- Arcane Pulse (Nightborne)
-    [255647] = 150, -- Light's Judgment (Lightforged Draenei)
-    [256948] = 180, -- Spatial Rift (Void Elf)
-    [274738] = 120, -- Ancestral Call (Mag'har Orc)
-    [291944] = 150, -- Regeneratin' (Zandalari Troll)
-    -- [281954] = 15 * 60, -- Pterrordax Swoop (Zandalari Troll)
-    [287712] = 150, -- Haymaker (Kul Tiran)
-
-    [69179] = 120, -- Arcane Torrent (Blood Elf Warrior)
-    [50613] = 120, -- Arcane Torrent (Blood Elf Death Knight)
-    [155145] = 120, -- Arcane Torrent (Blood Elf Paladin)
-    [25046] = 120, -- Arcane Torrent (Blood Elf Rogue)
-    [80483] = 120, -- Arcane Torrent (Blood Elf Hunter)
-    [129597] = 120, -- Arcane Torrent (Blood Elf Monk)
-    [28730] = 120, -- Arcane Torrent (Blood Elf Mage, Warlock)
-    [202719] = 120, -- Arcane Torrent (Blood Elf Demon Hunter)
-    [232633] = 120, -- Arcane Torrent (Blood Elf Priest)
-
-    [312411] = 90, -- Bag of Tricks (Vulpera)
-    -- [312924] = 180, -- Hyper Organic Light Originator (Mechagnome)
-    [312916] = 150, -- Emergency Failsafe (Mechagnome)
+    [59752] = 180, -- Will to Survive -- Human -- https://www.wowhead.com/spell=59752/will-to-survive
+    [7744] = 160, -- Will of the Forsaken -- Undead -- https://www.wowhead.com/spell=7744/will-of-the-forsaken
+    [265221] = 160, -- Fireblood -- Dark Iron Dwarf -- https://www.wowhead.com/spell=265221/fireblood -- MAYBE
+    [20594] = 160, -- Stoneform -- Dwarf -- https://www.wowhead.com/spell=20594/stoneform -- MAYBE
+    [20589] = 60, -- Escape Artist -- Gnome -- https://www.wowhead.com/spell=20589/escape-artist
   },
-  ["ETCCD"] = {
-    [205604] = 60, -- Reverse Magic (Demon Hunter All)
-
-    [48707] = 60, -- Anti-Magic Shell (Death Knight All)
-
-    [18499] = 60, -- Berserker Rage (Warrior All)
-
-    [119905] = 15, -- Singe Magic (Warlock Imp)
-    [132411] = 15, -- Singe Magic (Warlock Imp Grimoire of Sacrifice)
-    [119907] = 120, -- Shadow Bulwark (Warlock Void Walker)
-    [132413] = 120, -- Shadow Bulwark (Warlock Void Walker Grimoire of Sacrifice)
-    [119914] = 30, -- Axe Toss (Warlock Felguard)
-
-    [31224] = 120, -- Cloak of Shadows (Rogue All)
-
-    [187650] = 25, -- Freezing Trap (Hunter All)
+  ["Spell"] = {
+    [48792] = 120, -- Icebound Fortitude -- Death Knight -- https://www.wowhead.com/spell=48792
+    [49039] = 120, -- Lichborne -- Death Knight -- https://www.wowhead.com/spell=49039
+    [354489] = 20, -- Glimpse -- Demon Hunter -- https://www.wowhead.com/spell=354489/glimpse
+    [378464] = 90, -- Nullifying Shroud --  Evoker -- https://www.wowhead.com/spell=378464/nullifying-shroud
+    [357210] = 120, -- Deep Breath -- Evoker -- https://www.wowhead.com/spell=357210/deep-breath
+    [359816] = 120, -- Dream Flight -- Evoker -- https://www.wowhead.com/spell=359816/dream-flight
+    [403631] = 120, -- Breath of Eons -- Evoker -- https://www.wowhead.com/spell=403631/breath-of-eons
+    [421453] = 90, -- Ultimate Penitence -- Priest -- https://www.wowhead.com/spell=421453/ultimate-penitence
+    [227847] = 90, -- Bladestorm -- Warrior -- https://www.wowhead.com/spell=227847/bladestorm
+    [389774] = 90, -- Bladestorm -- Warrior -- https://www.wowhead.com/spell=389774/bladestorm
+    [642] = 300, -- Divine Shield -- Paladin -- https://www.wowhead.com/spell=642/divine-shield
   },
-  ["Reset"] = {
-    -- [195710] = 30, -- Honorable Medallion
-    -- [208683] = 30, -- Gladiator's Medallion
-    -- [195901] = 30, -- Adapted
-    [42292] = 30, -- Item Trinket PvP Trinket Account attribution (Require Texture setting)
-    [336126] = 30, -- Item Trinket Gladiator's Medallion -- DEFAULT
-    [336139] = 30, -- Item Trinket Adapted
-    [59752] = 90, -- Will to Survive (Human) -- DEFAULT
-    [7744] = 30, -- Will of the Forsaken (Undead(Scourge))
-    [65116] = 30, -- Stoneform (Dwarf)
-    [273104] = 30, -- Fireblood (Dark Iron Dwarf) 265221(x)
-  },
+}
+
+NS.Interrupts = {
+  [47528] = true, -- // Mind Freeze
+  [106839] = true, -- // Skull Bash
+  [2139] = true, -- // Counterspell
+  [96231] = true, -- // Rebuke
+  [15487] = true, -- // Silence
+  [1766] = true, -- // Kick
+  [57994] = true, -- // Wind Shear
+  [6552] = true, -- // Pummel
+  [19647] = true, -- // Spell Lock https://www.wowhead.com/spell=19647
+  [132409] = true, -- Spell Lock (demon sacrificed) https://www.wowhead.com/spell=132409
+  [116705] = true, -- // Spear Hand Strike
+  [115781] = true, -- // Optical Blast
+  [183752] = true, -- // Consume Magic
+  [187707] = true, -- // Muzzle
+  [91802] = true, -- // Shambling Rush https://www.wowhead.com/spell=91802/shambling-rush
+  [212619] = true, -- // Вызов охотника Скверны
+  [78675] = true, -- // Столп солнечного света
+  [351338] = true, -- Quell https://www.wowhead.com/spell=351338
+  [147362] = true, -- Counter Shot
+}
+
+NS.Trinkets = {
+  [59752] = true,
+  [7744] = true,
+  [42292] = true,
+  [336126] = true,
+  [336139] = true,
+  [283167] = true,
 }

@@ -1,11 +1,12 @@
-﻿## Interface: 110002
+## Interface: 110002
 ## Title: NameplateTrinket
 ## Version: 1.0.0
 ## Author: RBGDEV
-## Notes: Show CC Diminish return and Trinket on Nameplate
-## OptionalDeps: Ace3, LibStub, LibHealerTracker, LibSharedMedia-3.0, AceGUI-3.0-SharedMediaWidgets
+## Notes: Tracks trinket and other cc breaking spells on nameplates
+## OptionalDeps: Ace3, LibStub, LibHealerTracker
 ## SavedVariables: NameplateTrinketDB
-## X-Credits: Leming, Ajax
+## X-Category: Buffs, Combat, Battlegrounds/PvP
+## X-Credits: StoleWaterTotem, Leming, Ajax
 ## X-License: All Rights Reserved
 ## X-Website: https://www.curseforge.com/wow/addons/nameplate-trinket
 ## X-Curse-Project-ID:
@@ -17,7 +18,7 @@ embeds.xml
 #@end-no-lib-strip@
 
 config.lua
+options.lua
 helpers.lua
 spells.lua
-options.lua
 NameplateTrinket.lua
