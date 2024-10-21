@@ -162,18 +162,11 @@ do
     SetFrameSize(frame)
   end
 
-  local function GetNameplateAddonFrame(nameplate)
+  local function GetNameplateFrame(nameplate)
     local frame = nameplate
-    if Plater and frame.UnitFrame and frame.UnitFrame.PlaterOnScreen then
-      frame = frame.UnitFrame.healthBar
-    elseif frame.kui and frame.kui.bg and frame.kui:IsShown() then
-      frame = frame.kui.bg
-    elseif ElvUIPlayerNamePlateAnchor then
-      frame = ElvUIPlayerNamePlateAnchor
-    elseif frame.UnitFrame then
+    if frame.UnitFrame then
       frame = frame.UnitFrame.healthBar
     end
-
     return frame
   end
 
@@ -184,7 +177,7 @@ do
       frame.NCFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
       frame.NCFrame:SetWidth(NS.db.global.iconSize)
       frame.NCFrame:SetHeight(NS.db.global.iconSize)
-      local anchorFrame = GetNameplateAddonFrame(frame)
+      local anchorFrame = GetNameplateFrame(frame)
       frame.NCFrame:SetPoint(
         NS.db.global.anchor,
         anchorFrame,
@@ -223,7 +216,7 @@ do
         frame.NCFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
         frame.NCFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
         frame.NCFrame:ClearAllPoints()
-        local anchorFrame = GetNameplateAddonFrame(frame)
+        local anchorFrame = GetNameplateFrame(frame)
         frame.NCFrame:SetPoint(
           NS.db.global.anchor,
           anchorFrame,
@@ -506,32 +499,27 @@ do
 
   function NS.EnableTestMode()
     if not IsInInstance() and not NS.IN_DUEL then
-      for nameplate, _ in pairs(Nameplates) do
-        nameplate.NCFrame = nil
-        nameplate.NCIcons = {}
-        nameplate.NCIconsCount = 0 -- // it's faster than #nameplate.NCIcons
-        Nameplates[nameplate] = true
-        NameplatesVisible[nameplate] = nil
-      end
-
       -- https://warcraft.wiki.gg/wiki/API_C_NamePlate.GetNamePlates
       -- https://github.com/tomrus88/BlizzardInterfaceCode/blob/master/Interface/AddOns/Blizzard_NamePlates/Blizzard_NamePlates.lua#L264
       for _, nameplate in pairs(GetNamePlates(issecure())) do
         local unitID = nameplate.namePlateUnitToken
         local unitGUID = UnitGUID(unitID)
-        if
-          nameplate
-          and unitGUID
-          and unitGUID ~= LocalPlayerGUID
-          and GUIDIsPlayer(unitGUID)
-          and not NameplatesVisible[nameplate]
-        then
-          NameplatesVisible[nameplate] = unitGUID
-          if not Nameplates[nameplate] then
-            nameplate.NCFrame = nil
-            nameplate.NCIcons = {}
-            nameplate.NCIconsCount = 0 -- // it's faster than #nameplate.NCIcons
-            Nameplates[nameplate] = true
+        if nameplate and unitGUID then
+          if GUIDIsPlayer(unitGUID) then
+            NameplatesVisible[nameplate] = unitGUID
+            if not Nameplates[nameplate] then
+              nameplate.NCIcons = {}
+              nameplate.NCIconsCount = 0 -- // it's faster than #nameplate.NCIcons
+              Nameplates[nameplate] = true
+            end
+            if nameplate.NCFrame ~= nil and unitGUID ~= LocalPlayerGUID then
+              nameplate.NCFrame:Show()
+            end
+            UpdateOnlyOneNameplate(nameplate, unitGUID)
+          else
+            if nameplate.NCFrame ~= nil then
+              nameplate.NCFrame:Hide()
+            end
           end
         end
       end
@@ -592,7 +580,7 @@ do
 
     if clearSpells then
       if not IsInInstance() then
-        if NS.db.global.test then
+        if NS.db.global.test and TestFrame then
           -- maybe new function to wipe non-trinket test spells only
           NS.DisableTestMode()
           NS.EnableTestMode()
@@ -737,17 +725,23 @@ do
   function NameplateTrinket:NAME_PLATE_UNIT_ADDED(unitID)
     local nameplate = GetNamePlateForUnit(unitID)
     local unitGUID = UnitGUID(unitID)
-    if nameplate and unitGUID and GUIDIsPlayer(unitGUID) then
-      NameplatesVisible[nameplate] = unitGUID
-      if not Nameplates[nameplate] then
-        nameplate.NCIcons = {}
-        nameplate.NCIconsCount = 0 -- // it's faster than #nameplate.NCIcons
-        Nameplates[nameplate] = true
+    if nameplate and unitGUID then
+      if GUIDIsPlayer(unitGUID) then
+        NameplatesVisible[nameplate] = unitGUID
+        if not Nameplates[nameplate] then
+          nameplate.NCIcons = {}
+          nameplate.NCIconsCount = 0 -- // it's faster than #nameplate.NCIcons
+          Nameplates[nameplate] = true
+        end
+        if nameplate.NCFrame ~= nil and unitGUID ~= LocalPlayerGUID then
+          nameplate.NCFrame:Show()
+        end
+        UpdateOnlyOneNameplate(nameplate, unitGUID)
+      else
+        if nameplate.NCFrame ~= nil then
+          nameplate.NCFrame:Hide()
+        end
       end
-      if nameplate.NCFrame ~= nil and unitGUID ~= LocalPlayerGUID then
-        nameplate.NCFrame:Show()
-      end
-      UpdateOnlyOneNameplate(nameplate, unitGUID)
     end
   end
 
@@ -786,11 +780,14 @@ do
       end
 
       NameplateTrinketFrame:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-      NameplateTrinketFrame:UnregisterEvent("NAME_PLATE_UNIT_ADDED")
-      NameplateTrinketFrame:UnregisterEvent("NAME_PLATE_UNIT_REMOVED")
 
-      if NS.db.global.targetOnly then
-        NameplateTrinketFrame:UnregisterEvent("PLAYER_TARGET_CHANGED")
+      if not NS.db.global.test then
+        NameplateTrinketFrame:UnregisterEvent("NAME_PLATE_UNIT_ADDED")
+        NameplateTrinketFrame:UnregisterEvent("NAME_PLATE_UNIT_REMOVED")
+
+        if NS.db.global.targetOnly then
+          NameplateTrinketFrame:UnregisterEvent("PLAYER_TARGET_CHANGED")
+        end
       end
     end
   end
@@ -798,6 +795,9 @@ do
   -- we care about in combat always out of instances
   function NameplateTrinket:PLAYER_REGEN_DISABLED()
     if not IsInInstance() and not NS.IN_DUEL then
+      wipe(SpellsPerPlayerGUID)
+      ReallocateAllIcons(false)
+
       if NS.db.global.test and TestFrame then
         NS.DisableTestMode()
       end
@@ -820,12 +820,12 @@ do
 
         NS.IN_DUEL = true
 
+        wipe(SpellsPerPlayerGUID)
+        ReallocateAllIcons(false)
+
         if NS.db.global.test and TestFrame then
           NS.DisableTestMode()
         end
-
-        wipe(SpellsPerPlayerGUID)
-        ReallocateAllIcons(false)
 
         NameplateTrinketFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
         NameplateTrinketFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
@@ -852,11 +852,14 @@ do
       end
 
       NameplateTrinketFrame:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-      NameplateTrinketFrame:UnregisterEvent("NAME_PLATE_UNIT_ADDED")
-      NameplateTrinketFrame:UnregisterEvent("NAME_PLATE_UNIT_REMOVED")
 
-      if NS.db.global.targetOnly then
-        NameplateTrinketFrame:UnregisterEvent("PLAYER_TARGET_CHANGED")
+      if not NS.db.global.test then
+        NameplateTrinketFrame:UnregisterEvent("NAME_PLATE_UNIT_ADDED")
+        NameplateTrinketFrame:UnregisterEvent("NAME_PLATE_UNIT_REMOVED")
+
+        if NS.db.global.targetOnly then
+          NameplateTrinketFrame:UnregisterEvent("PLAYER_TARGET_CHANGED")
+        end
       end
     end
   end
@@ -884,7 +887,7 @@ do
     end
   end
 
-  -- we onlu care about leaving world in instances
+  -- we only care about leaving world in instances
   function NameplateTrinket:PLAYER_LEAVING_WORLD()
     NS.Debug("PLAYER_LEAVING_WORLD", IsInInstance())
     wipe(SpellsPerPlayerGUID)
@@ -892,11 +895,14 @@ do
     if not IsInInstance() then
       NameplateTrinketFrame:UnregisterEvent("PLAYER_LEAVING_WORLD")
       NameplateTrinketFrame:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-      NameplateTrinketFrame:UnregisterEvent("NAME_PLATE_UNIT_ADDED")
-      NameplateTrinketFrame:UnregisterEvent("NAME_PLATE_UNIT_REMOVED")
 
-      if NS.db.global.targetOnly then
-        NameplateTrinketFrame:UnregisterEvent("PLAYER_TARGET_CHANGED")
+      if not NS.db.global.test then
+        NameplateTrinketFrame:UnregisterEvent("NAME_PLATE_UNIT_ADDED")
+        NameplateTrinketFrame:UnregisterEvent("NAME_PLATE_UNIT_REMOVED")
+
+        if NS.db.global.targetOnly then
+          NameplateTrinketFrame:UnregisterEvent("PLAYER_TARGET_CHANGED")
+        end
       end
     end
   end
@@ -922,18 +928,8 @@ do
     end)
 
     if IsInInstance() then
-      if NS.db.global.test then
-        for nameplate, _ in pairs(Nameplates) do
-          nameplate.NCFrame = nil
-          nameplate.NCIcons = {}
-          nameplate.NCIconsCount = 0 -- // it's faster than #nameplate.NCIcons
-          Nameplates[nameplate] = true
-          NameplatesVisible[nameplate] = nil
-        end
-
-        if TestFrame then
-          NS.DisableTestMode()
-        end
+      if NS.db.global.test and TestFrame then
+        NS.DisableTestMode()
       end
 
       NameplateTrinketFrame:RegisterEvent("PLAYER_LEAVING_WORLD")
