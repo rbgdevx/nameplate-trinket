@@ -60,6 +60,7 @@ local ElapsedTimer = 0
 local Nameplates = {}
 local NameplatesVisible = {}
 local AllCooldowns = {}
+local glowInfo = {}
 NS.AllCooldowns = AllCooldowns
 local EventFrame, TestFrame, LocalPlayerGUID
 
@@ -77,6 +78,7 @@ do
   function NS.GetDefaultDBEntryForSpell()
     return {
       ["enabled"] = true,
+      ["glow"] = nil,
     }
   end
 
@@ -115,36 +117,37 @@ end
 do
   local function SetIconPlace(frame, icon, iconIndex)
     icon:ClearAllPoints()
-    local index = iconIndex == nil and frame.NCIconsCount or (iconIndex - 1)
+    local index = iconIndex == nil and frame.NTIconsCount or (iconIndex - 1)
     if index == 0 then
       if NS.db.global.growDirection == "RIGHT" then
-        icon:SetPoint("LEFT", frame.NCFrame, "LEFT", 0, 0)
+        icon:SetPoint("LEFT", frame.NTFrame, "LEFT", 0, 0)
       elseif NS.db.global.growDirection == "LEFT" then
-        icon:SetPoint("RIGHT", frame.NCFrame, "RIGHT", 0, 0)
+        icon:SetPoint("RIGHT", frame.NTFrame, "RIGHT", 0, 0)
       end
     else
       if NS.db.global.growDirection == "RIGHT" then
-        icon:SetPoint("LEFT", frame.NCIcons[index], "RIGHT", NS.db.global.iconSpacing, 0)
+        icon:SetPoint("LEFT", frame.NTIcons[index], "RIGHT", NS.db.global.iconSpacing, 0)
       elseif NS.db.global.growDirection == "LEFT" then
-        icon:SetPoint("RIGHT", frame.NCIcons[index], "LEFT", -NS.db.global.iconSpacing, 0)
+        icon:SetPoint("RIGHT", frame.NTIcons[index], "LEFT", -NS.db.global.iconSpacing, 0)
       end
     end
   end
 
   local function SetFrameSize(frame)
     local maxWidth, maxHeight = 0, 0
-    if frame.NCFrame then
-      for _, icon in pairs(frame.NCIcons) do
+    if frame.NTFrame then
+      for _, icon in pairs(frame.NTIcons) do
         if icon.shown then
           maxHeight = mmax(maxHeight, icon:GetHeight())
           maxWidth = maxWidth + icon:GetWidth() + NS.db.global.iconSpacing
         end
       end
+
+      maxWidth = maxWidth - NS.db.global.iconSpacing
+      maxHeight = maxHeight -- maxHeight - NS.db.global.iconSpacing
+      frame.NTFrame:SetWidth(mmax(maxWidth, 1))
+      frame.NTFrame:SetHeight(mmax(maxHeight, 1))
     end
-    maxWidth = maxWidth - NS.db.global.iconSpacing
-    maxHeight = maxHeight -- maxHeight - NS.db.global.iconSpacing
-    frame.NCFrame:SetWidth(mmax(maxWidth, 1))
-    frame.NCFrame:SetHeight(mmax(maxHeight, 1))
   end
 
   function HideCDIcon(icon, frame)
@@ -153,6 +156,9 @@ do
     icon:Hide()
     icon.shown = false
     icon.textureID = 0
+    if NS.db.global.enableGlow and icon.glowTexture then
+      icon.glowTexture:Hide()
+    end
     SetFrameSize(frame)
   end
 
@@ -171,25 +177,27 @@ do
   end
 
   function AllocateIcon(frame)
-    if not frame.NCFrame then
-      frame.NCFrame = CreateFrame("frame", nil, frame)
-      frame.NCFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
-      frame.NCFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
-      frame.NCFrame:SetWidth(NS.db.global.iconSize)
-      frame.NCFrame:SetHeight(NS.db.global.iconSize)
+    if not frame.NTFrame then
+      frame.NTFrame = CreateFrame("frame", nil, frame)
+      frame.NTFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
+      frame.NTFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
+      frame.NTFrame:SetWidth(NS.db.global.iconSize)
+      frame.NTFrame:SetHeight(NS.db.global.iconSize)
+      frame.NTFrame:SetFrameStrata(NS.db.global.frameStrata)
       local anchorFrame = GetNameplateFrame(frame)
-      frame.NCFrame:SetPoint(
+      frame.NTFrame:SetPoint(
         NS.db.global.anchor,
         anchorFrame,
         NS.db.global.anchorTo,
         NS.db.global.offsetX,
         NS.db.global.offsetY
       )
-      frame.NCFrame:Show()
+      frame.NTFrame:Show()
     end
-    local icon = CreateFrame("frame", nil, frame.NCFrame)
+    local icon = CreateFrame("frame", nil, frame.NTFrame)
     icon:SetWidth(NS.db.global.iconSize)
     icon:SetHeight(NS.db.global.iconSize)
+    icon:SetAlpha(NS.db.global.iconAlpha)
     SetIconPlace(frame, icon)
     icon:Hide()
 
@@ -206,18 +214,19 @@ do
     icon.border:SetVertexColor(1, 0.35, 0)
     icon.border:SetAllPoints(icon)
     icon.border:Hide()
-    frame.NCIconsCount = frame.NCIconsCount + 1
-    tinsert(frame.NCIcons, icon)
+    frame.NTIconsCount = frame.NTIconsCount + 1
+    tinsert(frame.NTIcons, icon)
   end
 
   function ReallocateAllIcons(clearSpells)
     for frame in pairs(Nameplates) do
-      if frame.NCFrame then
-        frame.NCFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
-        frame.NCFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
-        frame.NCFrame:ClearAllPoints()
+      if frame.NTFrame then
+        frame.NTFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
+        frame.NTFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
+        frame.NTFrame:SetFrameStrata(NS.db.global.frameStrata)
+        frame.NTFrame:ClearAllPoints()
         local anchorFrame = GetNameplateFrame(frame)
-        frame.NCFrame:SetPoint(
+        frame.NTFrame:SetPoint(
           NS.db.global.anchor,
           anchorFrame,
           NS.db.global.anchorTo,
@@ -225,9 +234,10 @@ do
           NS.db.global.offsetY
         )
         local counter = 0
-        for iconIndex, icon in pairs(frame.NCIcons) do
+        for iconIndex, icon in pairs(frame.NTIcons) do
           icon:SetWidth(NS.db.global.iconSize)
           icon:SetHeight(NS.db.global.iconSize)
+          icon:SetAlpha(NS.db.global.iconAlpha)
           SetIconPlace(frame, icon, iconIndex)
           icon.texture:SetTexCoord(0, 1, 0, 1)
           if clearSpells then
@@ -336,6 +346,63 @@ do
     return t
   end
 
+  local function SetGlow(icon, spellNeedGlow, remain, isActive)
+    local offsetMultiplier = 0.41
+    local widthOffset = NS.db.global.iconSize * offsetMultiplier
+    local heightOffset = NS.db.global.iconSize * offsetMultiplier
+
+    if not icon.glowTexture then
+      icon.glowTexture = icon:CreateTexture(nil, "OVERLAY")
+      icon.glowTexture:SetBlendMode("ADD")
+      icon.glowTexture:SetAtlas("clickcast-highlight-spellbook")
+      icon.glowTexture:SetDesaturated(true)
+    end
+
+    icon.glowTexture:SetPoint("TOPLEFT", icon, "TOPLEFT", -widthOffset, heightOffset)
+    icon.glowTexture:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT", widthOffset, -heightOffset)
+    icon.glowTexture:SetVertexColor(1, 0.69, 0, 0.5)
+
+    if glowInfo[icon] then
+      glowInfo[icon]:Cancel() -- // cancel delayed glow
+      glowInfo[icon] = nil
+    end
+    if not isActive then
+      if icon.glow ~= false then
+        if icon.glowTexture then
+          icon.glowTexture:Hide()
+        end
+        icon.glow = false
+      end
+    else
+      if spellNeedGlow ~= nil then
+        if remain < spellNeedGlow or remain > NS.GLOW_TIME_INFINITE then
+          if icon.glow ~= true then
+            if icon.glowTexture then
+              icon.glowTexture:Show() -- // show glow immediately
+            end
+            icon.glow = true
+          end
+        else
+          if icon.glowTexture then
+            icon.glowTexture:Hide() -- // hide glow
+          end
+          icon.glow = false
+          glowInfo[icon] = C_Timer.NewTimer(remain - spellNeedGlow, function()
+            if icon.glowTexture then
+              icon.glowTexture:Show()
+            end
+            icon.glow = true
+          end) -- // queue delayed glow
+        end
+      elseif icon.glow ~= false then
+        if icon.glowTexture then
+          icon.glowTexture:Hide() -- // this aura doesn't require glow
+        end
+        icon.glow = false
+      end
+    end
+  end
+
   local function SetBorder(icon, spellID, isActive)
     if isActive and Trinkets[spellID] then
       if icon.borderState ~= 2 then
@@ -401,6 +468,12 @@ do
     if unitGUID == LocalPlayerGUID then
       return
     end
+    if not GUIDIsPlayer(unitGUID) then
+      if frame.NTFrame ~= nil then
+        frame.NTFrame:Hide()
+      end
+      return
+    end
     local counter = 1
     if GlobalFilterNameplate(unitGUID) then
       if SpellsPerPlayerGUID[unitGUID] then
@@ -412,11 +485,14 @@ do
           local dbInfo = NS.db.global.SpellCDs[spellID]
           local remain = spellInfo.expires - currentTime
           if FilterSpell(dbInfo, remain, isActiveCD, spellID) then
-            if counter > frame.NCIconsCount then
+            if counter > frame.NTIconsCount then
               AllocateIcon(frame)
             end
-            local icon = frame.NCIcons[counter]
+            local icon = frame.NTIcons[counter]
             SetTexture(icon, spellInfo.texture, isActiveCD)
+            if NS.db.global.enableGlow then
+              SetGlow(icon, dbInfo.glow, remain, isActiveCD)
+            end
             local cooldown = AllCooldowns[spellID]
             SetCooldown(icon, spellInfo.started, cooldown, isActiveCD)
             SetBorder(icon, spellID, isActiveCD)
@@ -428,8 +504,8 @@ do
         end
       end
     end
-    for k = counter, frame.NCIconsCount do
-      local icon = frame.NCIcons[k]
+    for k = counter, frame.NTIconsCount do
+      local icon = frame.NTIcons[k]
       if icon.shown then
         HideCDIcon(icon, frame)
       end
@@ -499,6 +575,14 @@ do
 
   function NS.EnableTestMode()
     if not IsInInstance() and not NS.IN_DUEL then
+      for nameplate, _ in pairs(Nameplates) do
+        nameplate.NTFrame = nil
+        nameplate.NTIcons = {}
+        nameplate.NTIconsCount = 0 -- // it's faster than #nameplate.NTIcons
+        Nameplates[nameplate] = nil
+        NameplatesVisible[nameplate] = nil
+      end
+
       -- https://warcraft.wiki.gg/wiki/API_C_NamePlate.GetNamePlates
       -- https://github.com/tomrus88/BlizzardInterfaceCode/blob/master/Interface/AddOns/Blizzard_NamePlates/Blizzard_NamePlates.lua#L264
       for _, nameplate in pairs(GetNamePlates(issecure())) do
@@ -508,17 +592,17 @@ do
           if GUIDIsPlayer(unitGUID) then
             NameplatesVisible[nameplate] = unitGUID
             if not Nameplates[nameplate] then
-              nameplate.NCIcons = {}
-              nameplate.NCIconsCount = 0 -- // it's faster than #nameplate.NCIcons
+              nameplate.NTIcons = {}
+              nameplate.NTIconsCount = 0 -- // it's faster than #nameplate.NTIcons
               Nameplates[nameplate] = true
             end
-            if nameplate.NCFrame ~= nil and unitGUID ~= LocalPlayerGUID then
-              nameplate.NCFrame:Show()
+            if nameplate.NTFrame ~= nil and unitGUID ~= LocalPlayerGUID then
+              nameplate.NTFrame:Show()
             end
             UpdateOnlyOneNameplate(nameplate, unitGUID)
           else
-            if nameplate.NCFrame ~= nil then
-              nameplate.NCFrame:Hide()
+            if nameplate.NTFrame ~= nil then
+              nameplate.NTFrame:Hide()
             end
           end
         end
@@ -530,14 +614,15 @@ do
 
     _charactersDB = NS.deepcopy(SpellsPerPlayerGUID)
     _spellCDs = NS.deepcopy(NS.db.global.SpellCDs)
-    NS.db.global.SpellCDs[SPELL_PVPTRINKET] = NS.GetDefaultDBEntryForSpell()
-    NS.db.global.SpellCDs[SPELL_PVPTRINKET].enabled = true
     if not NS.db.global.trinketOnly then
       for spellID in pairs(_spellIDs) do
         NS.db.global.SpellCDs[spellID] = NS.GetDefaultDBEntryForSpell()
         NS.db.global.SpellCDs[spellID].enabled = true
       end
     end
+    NS.db.global.SpellCDs[SPELL_PVPTRINKET] = NS.GetDefaultDBEntryForSpell()
+    NS.db.global.SpellCDs[SPELL_PVPTRINKET].enabled = true
+    NS.db.global.SpellCDs[SPELL_PVPTRINKET].glow = NS.GLOW_TIME_INFINITE
     if not TestFrame then
       TestFrame = CreateFrame("frame")
       TestFrame:SetScript("OnEvent", function()
@@ -560,6 +645,14 @@ do
     if not IsInInstance() and not NS.IN_DUEL then
       NameplateTrinketFrame:UnregisterEvent("NAME_PLATE_UNIT_ADDED")
       NameplateTrinketFrame:UnregisterEvent("NAME_PLATE_UNIT_REMOVED")
+    end
+
+    for nameplate, _ in pairs(Nameplates) do
+      nameplate.NTFrame = nil
+      nameplate.NTIcons = {}
+      nameplate.NTIconsCount = 0 -- // it's faster than #nameplate.NTIcons
+      Nameplates[nameplate] = nil
+      NameplatesVisible[nameplate] = nil
     end
 
     TestFrame:SetScript("OnUpdate", nil)
@@ -729,17 +822,17 @@ do
       if GUIDIsPlayer(unitGUID) then
         NameplatesVisible[nameplate] = unitGUID
         if not Nameplates[nameplate] then
-          nameplate.NCIcons = {}
-          nameplate.NCIconsCount = 0 -- // it's faster than #nameplate.NCIcons
+          nameplate.NTIcons = {}
+          nameplate.NTIconsCount = 0 -- // it's faster than #nameplate.NTIcons
           Nameplates[nameplate] = true
         end
-        if nameplate.NCFrame ~= nil and unitGUID ~= LocalPlayerGUID then
-          nameplate.NCFrame:Show()
+        if nameplate.NTFrame ~= nil and unitGUID ~= LocalPlayerGUID then
+          nameplate.NTFrame:Show()
         end
         UpdateOnlyOneNameplate(nameplate, unitGUID)
       else
-        if nameplate.NCFrame ~= nil then
-          nameplate.NCFrame:Hide()
+        if nameplate.NTFrame ~= nil then
+          nameplate.NTFrame:Hide()
         end
       end
     end
@@ -749,8 +842,8 @@ do
     local nameplate = GetNamePlateForUnit(unitID)
     if nameplate and NameplatesVisible[nameplate] then
       NameplatesVisible[nameplate] = nil
-      if nameplate.NCFrame ~= nil then
-        nameplate.NCFrame:Hide()
+      if nameplate.NTFrame ~= nil then
+        nameplate.NTFrame:Hide()
       end
     end
   end

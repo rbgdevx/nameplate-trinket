@@ -106,11 +106,70 @@ NS.AceConfig = {
         return NS.db.global.ignoreNameplateScale
       end,
     },
+    enableGlow = {
+      name = "Enable Glow on Trinket",
+      desc = "Shows a yellow glow around the trinket icon.",
+      type = "toggle",
+      width = "full",
+      order = 7,
+      set = function(_, val)
+        NS.db.global.enableGlow = val
+
+        NS.OnDbChanged()
+      end,
+      get = function(_)
+        return NS.db.global.enableGlow
+      end,
+    },
+    frameStrata = {
+      name = "Frame Strata",
+      desc = "Set how high or low the icons are in the frame stack (in front or behind things)",
+      type = "select",
+      width = "normal",
+      order = 8,
+      values = {
+        ["BACKGROUND"] = "Background",
+        ["LOW"] = "Low",
+        ["MEDIUM"] = "Medium",
+        ["HIGH"] = "High",
+        ["DIALOG"] = "Dialog",
+        ["FULLSCREEN"] = "Fullscreen",
+        ["FULLSCREEN_DIALOG"] = "Fullscreen Dialog",
+        ["TOOLTIP"] = "Tooltip",
+      },
+      set = function(_, val)
+        NS.db.global.frameStrata = val
+
+        NS.OnDbChanged()
+      end,
+      get = function(_)
+        return NS.db.global.frameStrata
+      end,
+    },
+    spacing1 = { type = "description", order = 9, name = " " },
+    iconAlpha = {
+      name = "Icon Alpha",
+      type = "range",
+      width = "normal",
+      order = 10,
+      isPercent = false,
+      min = 0,
+      max = 1,
+      step = 0.01,
+      set = function(_, val)
+        NS.db.global.iconAlpha = val
+
+        NS.OnDbChanged()
+      end,
+      get = function(_)
+        return NS.db.global.iconAlpha
+      end,
+    },
     iconSize = {
       name = "Icon Size",
       type = "range",
       width = "normal",
-      order = 7,
+      order = 11,
       isPercent = false,
       min = 12,
       max = 64,
@@ -129,7 +188,7 @@ NS.AceConfig = {
       desc = "Spacing between each icon",
       type = "range",
       width = "normal",
-      order = 8,
+      order = 12,
       isPercent = false,
       min = 0,
       max = 25,
@@ -143,12 +202,12 @@ NS.AceConfig = {
         return NS.db.global.iconSpacing
       end,
     },
-    spacing1 = { type = "description", order = 9, name = " " },
+    spacing2 = { type = "description", order = 13, name = " " },
     anchor = {
       name = "Anchor",
       type = "select",
       width = "normal",
-      order = 10,
+      order = 14,
       values = {
         ["TOP"] = "Top",
         ["BOTTOM"] = "Bottom",
@@ -184,7 +243,7 @@ NS.AceConfig = {
       name = "Anchor To",
       type = "select",
       width = "normal",
-      order = 11,
+      order = 15,
       values = {
         ["TOP"] = "Top",
         ["BOTTOM"] = "Bottom",
@@ -221,7 +280,7 @@ NS.AceConfig = {
       desc = "The direction the icons will output",
       type = "select",
       width = "normal",
-      order = 12,
+      order = 16,
       values = {
         ["RIGHT"] = "Right",
         ["LEFT"] = "Left",
@@ -235,13 +294,13 @@ NS.AceConfig = {
         return NS.db.global.growDirection
       end,
     },
-    spacing2 = { type = "description", order = 13, name = " " },
+    spacing3 = { type = "description", order = 17, name = " " },
     offsetX = {
       name = "Offset X",
       desc = "Offset left/right from the anchor point",
       type = "range",
       width = "normal",
-      order = 14,
+      order = 18,
       isPercent = false,
       min = -250,
       max = 250,
@@ -260,7 +319,7 @@ NS.AceConfig = {
       desc = "Offset top/bottom from the anchor point",
       type = "range",
       width = "normal",
-      order = 15,
+      order = 19,
       isPercent = false,
       min = -250,
       max = 250,
@@ -274,7 +333,7 @@ NS.AceConfig = {
         return NS.db.global.offsetY
       end,
     },
-    spacing3 = { type = "description", order = 16, name = " " },
+    spacing4 = { type = "description", order = 20, name = " " },
     debug = {
       name = "Toggle debug mode",
       desc = "Turning this feature on prints debug messages to the chat window.",
