@@ -1,5 +1,10 @@
 # Nameplate Trinket
 
+## [v1.0.4](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v1.0.4) (2024-10-27)
+
+- Resets spells between solo shuffle rounds
+- Reduces space betwen icons and size of icons by 1
+
 ## [v1.0.3](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v1.0.3) (2024-10-27)
 
 - Fixes namespace of custom frames to be unique to this addon and not conflict with the addon i based this off of

@@ -10,6 +10,7 @@ local issecure = issecure
 local CombatLogGetCurrentEventInfo = CombatLogGetCurrentEventInfo
 local print = print
 local next = next
+local UnitAffectingCombat = UnitAffectingCombat
 
 local mmax = math.max
 local tinsert = table.insert
@@ -36,6 +37,8 @@ NameplateTrinketFrame:SetScript("OnEvent", function(_, event, ...)
     NameplateTrinket[event](NameplateTrinket, ...)
   end
 end)
+NameplateTrinketFrame.wasOnLoadingScreen = true
+NameplateTrinketFrame.inArena = false
 NS.NameplateTrinket.frame = NameplateTrinketFrame
 
 -- Consts
@@ -70,6 +73,11 @@ EventFrame:SetScript("OnEvent", function(self, event, ...)
 end)
 
 local AllocateIcon, ReallocateAllIcons, UpdateOnlyOneNameplate, HideCDIcon, ShowCDIcon, OnUpdate
+
+local function instanceCheck()
+  local inInstance, instanceType = IsInInstance()
+  NameplateTrinketFrame.inArena = inInstance and (instanceType == "arena")
+end
 
 -------------------------------------------------------------------------------------------------
 ----- Initialize
@@ -862,8 +870,13 @@ do
     wipe(SpellsPerPlayerGUID)
   end
 
+  local ShuffleFrame = CreateFrame("Frame")
+  ShuffleFrame.eventRegistered = false
+
   -- we care about out of combat always out of instances
   function NameplateTrinket:PLAYER_REGEN_ENABLED()
+    ShuffleFrame.eventRegistered = false
+
     if not IsInInstance() and not NS.IN_DUEL then
       wipe(SpellsPerPlayerGUID)
       ReallocateAllIcons(false)
@@ -980,6 +993,48 @@ do
     end
   end
 
+  function NameplateTrinket:GROUP_ROSTER_UPDATE()
+    if not NameplateTrinketFrame.inArena then
+      return
+    end
+
+    local name = AuraUtil.FindAuraByName("Arena Preparation", "player", "HELPFUL")
+    if not name then
+      return
+    end
+
+    if UnitAffectingCombat("player") then
+      if not ShuffleFrame.eventRegistered then
+        NameplateTrinketFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+        ShuffleFrame.eventRegistered = true
+      end
+    else
+      wipe(SpellsPerPlayerGUID)
+      ReallocateAllIcons(false)
+    end
+  end
+
+  function NameplateTrinket:ARENA_OPPONENT_UPDATE()
+    if not NameplateTrinketFrame.inArena then
+      return
+    end
+
+    local name = AuraUtil.FindAuraByName("Arena Preparation", "player", "HELPFUL")
+    if not name then
+      return
+    end
+
+    if UnitAffectingCombat("player") then
+      if not ShuffleFrame.eventRegistered then
+        NameplateTrinketFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+        ShuffleFrame.eventRegistered = true
+      end
+    else
+      wipe(SpellsPerPlayerGUID)
+      ReallocateAllIcons(false)
+    end
+  end
+
   -- we only care about leaving world in instances
   function NameplateTrinket:PLAYER_LEAVING_WORLD()
     NS.Debug("PLAYER_LEAVING_WORLD", IsInInstance())
@@ -988,6 +1043,8 @@ do
     if not IsInInstance() then
       NameplateTrinketFrame:UnregisterEvent("PLAYER_LEAVING_WORLD")
       NameplateTrinketFrame:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+      NameplateTrinketFrame:UnregisterEvent("ARENA_OPPONENT_UPDATE")
+      NameplateTrinketFrame:UnregisterEvent("GROUP_ROSTER_UPDATE")
 
       if not NS.db.global.test then
         NameplateTrinketFrame:UnregisterEvent("NAME_PLATE_UNIT_ADDED")
@@ -1004,6 +1061,8 @@ do
     NS.Debug("PLAYER_ENTERING_WORLD", IsInInstance(), NS.IN_DUEL, NS.db.global.test)
     wipe(SpellsPerPlayerGUID)
     ReallocateAllIcons(false)
+
+    instanceCheck()
 
     LHT.Subscribe(function(_guid, _)
       if SpellsPerPlayerGUID[_guid] then
@@ -1029,6 +1088,8 @@ do
       NameplateTrinketFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
       NameplateTrinketFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
       NameplateTrinketFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
+      NameplateTrinketFrame:RegisterEvent("ARENA_OPPONENT_UPDATE")
+      NameplateTrinketFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 
       if NS.db.global.targetOnly then
         NameplateTrinketFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
