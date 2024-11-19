@@ -54,6 +54,7 @@ NameplateTrinketFrame.TestModeActive = false
 NameplateTrinketFrame.wasOnLoadingScreen = true
 NameplateTrinketFrame.instanceType = nil
 NameplateTrinketFrame.inArena = false
+NameplateTrinketFrame.loaded = false
 NS.NameplateTrinket.frame = NameplateTrinketFrame
 
 -- local COMBATLOG_OBJECT_TYPE_PLAYER = COMBATLOG_OBJECT_TYPE_PLAYER
@@ -1431,35 +1432,33 @@ function NameplateTrinket:GROUP_ROSTER_UPDATE()
     return
   end
 
-  if NS.isInGroup() then
-    for unit in NS.IterateGroupMembers() do
-      local guid = UnitGUID(unit)
-      if unit and guid then
-        if NS.isHealer(unit) and not Healers[guid] then
-          Healers[guid] = true
-        end
-        if not NS.isHealer(unit) and Healers[guid] then
-          Healers[guid] = nil
-        end
-      end
-    end
-  else
-    local guid = UnitGUID("player")
-    if guid then
-      if NS.isHealer("player") and not Healers[guid] then
-        Healers[guid] = true
-      end
-    end
-  end
-
   if UnitAffectingCombat("player") then
     if not ShuffleFrame.eventRegistered then
       NameplateTrinketFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
       ShuffleFrame.eventRegistered = true
     end
   else
-    twipe(TestSpellsPerPlayerGUID)
-    twipe(SpellsPerPlayerGUID)
+    if NS.isInGroup() then
+      for unit in NS.IterateGroupMembers() do
+        local guid = UnitGUID(unit)
+        if unit and guid then
+          if NS.isHealer(unit) and not Healers[guid] then
+            Healers[guid] = true
+          end
+          if not NS.isHealer(unit) and Healers[guid] then
+            Healers[guid] = nil
+          end
+        end
+      end
+    else
+      local guid = UnitGUID("player")
+      if guid then
+        if NS.isHealer("player") and not Healers[guid] then
+          Healers[guid] = true
+        end
+      end
+    end
+
     refreshNameplates()
   end
 end
@@ -1501,8 +1500,6 @@ function NameplateTrinket:ARENA_OPPONENT_UPDATE()
       end
     end
 
-    twipe(TestSpellsPerPlayerGUID)
-    twipe(SpellsPerPlayerGUID)
     refreshNameplates()
   end
 end
@@ -1510,8 +1507,6 @@ end
 function NameplateTrinket:PVP_MATCH_ACTIVE()
   twipe(TestSpellsPerPlayerGUID)
   twipe(SpellsPerPlayerGUID)
-  twipe(Nameplates)
-  twipe(NameplatesVisible)
 end
 
 local function instanceCheck()
@@ -1521,7 +1516,7 @@ local function instanceCheck()
   local correctedInstanceType = instanceType == nil and "unknown" or instanceType
 
   if instanceType == nil or instanceType == "unknown" then
-    print("report this to the addon author: instanceType is nil")
+    print("report this to the addon author: instanceType is: ", instanceType == nil and "nil" or "unknown")
   end
 
   if correctedInstanceType ~= NameplateTrinketFrame.instanceType then
@@ -1532,10 +1527,6 @@ local function instanceCheck()
       ReallocateTestIcons(false)
     end
   end
-end
-
-function NameplateTrinket:ZONE_CHANGED_NEW_AREA()
-  instanceCheck()
 end
 
 function NameplateTrinket:LOADING_SCREEN_DISABLED()
@@ -1617,11 +1608,6 @@ function NameplateTrinket:PLAYER_ENTERING_WORLD()
   end
   TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, OnTooltipSetItem)
 
-  twipe(TestSpellsPerPlayerGUID)
-  twipe(SpellsPerPlayerGUID)
-  twipe(Nameplates)
-  twipe(NameplatesVisible)
-
   NS.INSTANCE_TYPES = {
     -- nil resolves to "unknown"
     ["unknown"] = NS.db.global.instanceTypes.unknown, -- when in an unknown instance
@@ -1635,35 +1621,38 @@ function NameplateTrinket:PLAYER_ENTERING_WORLD()
 
   instanceCheck()
 
-  NameplateTrinketFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
-  NameplateTrinketFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
-  NameplateTrinketFrame:RegisterEvent("ARENA_OPPONENT_UPDATE")
-  NameplateTrinketFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
-  NameplateTrinketFrame:RegisterEvent("PVP_MATCH_ACTIVE")
-  NameplateTrinketFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-  NameplateTrinketFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
-  NameplateTrinketFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
-  NameplateTrinketFrame:RegisterEvent("DUEL_REQUESTED")
-  NameplateTrinketFrame:RegisterEvent("DUEL_FINISHED")
-  if NS.db.global.targetOnly then
-    NameplateTrinketFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+  if not NameplateTrinketFrame.loaded then
+    NameplateTrinketFrame.loaded = true
+
+    local timeElapsed = 0
+    if not EventFrame then
+      EventFrame = CreateFrame("frame")
+    end
+    EventFrame:SetScript("OnUpdate", function(_, elapsed)
+      timeElapsed = timeElapsed + elapsed
+      if timeElapsed >= 1 then
+        for frame, guid in pairs(NameplatesVisible) do
+          if frame and guid then
+            addNameplateIcons(frame, guid)
+          end
+        end
+        timeElapsed = 0
+      end
+    end)
+
+    NameplateTrinketFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
+    NameplateTrinketFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
+    NameplateTrinketFrame:RegisterEvent("ARENA_OPPONENT_UPDATE")
+    NameplateTrinketFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+    NameplateTrinketFrame:RegisterEvent("PVP_MATCH_ACTIVE")
+    NameplateTrinketFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+    if NS.db.global.targetOnly then
+      NameplateTrinketFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+    end
   end
 
-  local timeElapsed = 0
-  if not EventFrame then
-    EventFrame = CreateFrame("frame")
-  end
-  EventFrame:SetScript("OnUpdate", function(_, elapsed)
-    timeElapsed = timeElapsed + elapsed
-    if timeElapsed >= 1 then
-      for frame, guid in pairs(NameplatesVisible) do
-        if frame and guid then
-          addNameplateIcons(frame, guid)
-        end
-      end
-      timeElapsed = 0
-    end
-  end)
+  twipe(TestSpellsPerPlayerGUID)
+  twipe(SpellsPerPlayerGUID)
 end
 
 function NameplateTrinket:PLAYER_LOGIN()
@@ -1675,7 +1664,6 @@ function NameplateTrinket:PLAYER_LOGIN()
   NameplateTrinketFrame:RegisterEvent("PLAYER_LEAVING_WORLD")
   NameplateTrinketFrame:RegisterEvent("LOADING_SCREEN_ENABLED")
   NameplateTrinketFrame:RegisterEvent("LOADING_SCREEN_DISABLED")
-  NameplateTrinketFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 end
 NameplateTrinketFrame:RegisterEvent("PLAYER_LOGIN")
 

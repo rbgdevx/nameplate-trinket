@@ -1,10 +1,20 @@
 # Nameplate Trinket
 
+## [v2.0.1](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.0.1) (2024-11-19)
+
+- Fixing event registration usage
+- Fixing clearing of spells and nameplates
+- Better matching spell removal and placement to its original code in NameplateCooldowns to fix some bugs
+- Ensuring some enter world code only runs once to better match its original code in NameplateCooldowns
+- Fixing placement of healer in group code on group roster update
+- Updated print message for nil or unknown instance types
+- Removed Zone area check
+
 ## [v2.0.0](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.0.0) (2024-11-19)
 
 - Complete refactor from the ground up
   - overhaul of nameplate add/remove code to instead follow more closely to BetterBlizzPlates then NameplateCooldowns
-  - overhaul of nameplate hide/show codeto instead follow more closely to BetterBlizzPlates then NameplateCooldowns
+  - overhaul of nameplate hide/show code to instead follow more closely to BetterBlizzPlates then NameplateCooldowns
   - overhaul of the combat log to include pre-filtering checks to reduce code running frequency and amount
   - creating a shared namespace for myself on nameplate frames as i intend to make more nameplate addons which i can reduce frame additions
   - overhaul of the event setting and de-setting to instead just let the code run anytime and we'll determine when to show instead via settings but leave it available if toggled on
