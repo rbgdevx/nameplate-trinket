@@ -1,9 +1,31 @@
 # Nameplate Trinket
 
+## [v2.0.0](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.0.0) (2024-11-19)
+
+- Complete refactor from the ground up
+  - overhaul of nameplate add/remove code to instead follow more closely to BetterBlizzPlates then NameplateCooldowns
+  - overhaul of nameplate hide/show codeto instead follow more closely to BetterBlizzPlates then NameplateCooldowns
+  - overhaul of the combat log to include pre-filtering checks to reduce code running frequency and amount
+  - creating a shared namespace for myself on nameplate frames as i intend to make more nameplate addons which i can reduce frame additions
+  - overhaul of the event setting and de-setting to instead just let the code run anytime and we'll determine when to show instead via settings but leave it available if toggled on
+  - overhaul of the testing setup to better match NameplateCooldowns
+  - overhaul showing/hiding non-trinket spells when toggling off the trinket only setting
+  - overhaul showing/hiding/placing spells when they go on cooldown or come off of cooldown to better match NameplateCooldowns
+  - overhaul combat log spell capturing to simplify conditions and logic
+- all new ways to check for healers including a simpler refactor and integration of the old lib
+- fixing nameplate and icon refresh code and scenarios to better match NameplateCooldowns
+- added checks throughout the codebase to have more early returns to process less code if conditions aren't met
+- allowing glow to show up on any trinket based spell
+- adjusting spell filtering which fixed a show/hide bug off cooldown
+- removed no longer needed code due to overhaul
+- all new settings to hide icons in any instance type
+- removed a ton of legacy settings code
+- lots of cleanup
+
 ## [v1.0.4](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v1.0.4) (2024-10-27)
 
 - Resets spells between solo shuffle rounds
-- Reduces space betwen icons and size of icons by 1
+- Reduces space between icons and size of icons by 1
 
 ## [v1.0.3](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v1.0.3) (2024-10-27)
 

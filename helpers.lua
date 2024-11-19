@@ -1,11 +1,16 @@
 local _, NS = ...
 
 local print = print
-local setmetatable = setmetatable
-local getmetatable = getmetatable
+local IsInRaid = IsInRaid
+local IsInGroup = IsInGroup
+local GetNumGroupMembers = GetNumGroupMembers
+local GetNumSubgroupMembers = GetNumSubgroupMembers
+local UnitGroupRolesAssigned = UnitGroupRolesAssigned
 local pairs = pairs
 local type = type
 local next = next
+local setmetatable = setmetatable
+local getmetatable = getmetatable
 
 local twipe = table.wipe
 
@@ -15,6 +20,31 @@ local GetSpellInfo = C_Spell.GetSpellInfo
 NS.Debug = function(...)
   if NS.db and NS.db.global.debug then
     print(...)
+  end
+end
+
+NS.isInGroup = function()
+  return IsInRaid() or IsInGroup()
+end
+
+NS.isHealer = function(unit)
+  return UnitGroupRolesAssigned(unit) == "HEALER"
+end
+
+-- Function to assist iterating group members whether in a party or raid.
+NS.IterateGroupMembers = function(reversed, forceParty)
+  local unit = (not forceParty and IsInRaid()) and "raid" or "party"
+  local numGroupMembers = unit == "party" and GetNumSubgroupMembers() or GetNumGroupMembers()
+  local i = reversed and numGroupMembers or (unit == "party" and 0 or 1)
+  return function()
+    local ret
+    if i == 0 and unit == "party" then
+      ret = "player"
+    elseif i <= numGroupMembers and i > 0 then
+      ret = unit .. i
+    end
+    i = i + (reversed and -1 or 1)
+    return ret
   end
 end
 

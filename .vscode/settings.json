@@ -38,6 +38,7 @@
     "StaticPopupDialogs",
     "YES",
     "NO",
-    "SetDesaturation"
+    "SetDesaturation",
+    "TooltipDataProcessor"
   ]
 }

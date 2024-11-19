@@ -5,7 +5,7 @@ NS.CDs = {
     [42292] = 120, -- PvP Trinket -- https://www.wowhead.com/spell=42292/pvp-trinket
     [336126] = 120, -- Gladiator's Medallion -- https://www.wowhead.com/spell=336126/gladiators-medallion
     [336139] = 60, -- Adapted -- https://www.wowhead.com/spell=336139/adapted
-    [283167] = 60, -- PvP Trinket -- https://www.wowhead.com/spell=283167/pvp-trinket
+    [283167] = 120, -- PvP Trinket -- https://www.wowhead.com/spell=283167/pvp-trinket
     -- [195710] = 180, -- Honorable Medallion -- https://www.wowhead.com/spell=195710/honorable-medallion -- Spell Modifier
     -- [363117] = 180, -- Gladiator's Fastidious Resolve -- https://www.wowhead.com/spell=363117/gladiators-fastidious-resolve
     -- [363121] = 12, -- Gladiator's Echoing Resolve -- https://www.wowhead.com/spell=363121/gladiators-echoing-resolve
@@ -30,7 +30,7 @@ NS.CDs = {
     [357210] = 120, -- Deep Breath -- Evoker -- https://www.wowhead.com/spell=357210/deep-breath
     [359816] = 120, -- Dream Flight -- Evoker -- https://www.wowhead.com/spell=359816/dream-flight
     [403631] = 120, -- Breath of Eons -- Evoker -- https://www.wowhead.com/spell=403631/breath-of-eons
-    [421453] = 90, -- Ultimate Penitence -- Priest -- https://www.wowhead.com/spell=421453/ultimate-penitence
+    [421453] = 240, -- Ultimate Penitence -- Priest -- https://www.wowhead.com/spell=421453/ultimate-penitence
     [227847] = 90, -- Bladestorm -- Warrior -- https://www.wowhead.com/spell=227847/bladestorm
     [389774] = 90, -- Bladestorm -- Warrior -- https://www.wowhead.com/spell=389774/bladestorm
     [642] = 300, -- Divine Shield -- Paladin -- https://www.wowhead.com/spell=642/divine-shield
