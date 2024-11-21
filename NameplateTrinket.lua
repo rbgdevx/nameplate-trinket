@@ -847,7 +847,8 @@ local function addNameplateIcons(nameplate, guid)
   local hideNonTargets = NS.db.global.targetOnly and (not targetExists or not targetIsUnit)
   local hideAllies = not NS.db.global.showOnAllies and isFriend
   local hideOnSelf = not NS.db.global.showSelf and isSelf
-  local hideInstanceTypes = not NS.db.global.showEverywhere and NS.INSTANCE_TYPES[NameplateTrinketFrame.instanceType]
+  local hideInstanceTypes = not NS.db.global.showEverywhere
+    and not NS.INSTANCE_TYPES[NameplateTrinketFrame.instanceType]
   local hideNPCs = isNpc
   local hideDuringTestMode = NS.db.global.test and not IsInInstance()
   local hideIcons = hideDuringTestMode
@@ -962,7 +963,8 @@ local function addNameplateTestIcons(nameplate, guid)
   local hideNonTargets = NS.db.global.targetOnly and (not targetExists or not targetIsUnit)
   local hideAllies = not NS.db.global.showOnAllies and isFriend
   local hideOnSelf = not NS.db.global.showSelf and isSelf
-  local hideInstanceTypes = not NS.db.global.showEverywhere and NS.INSTANCE_TYPES[NameplateTrinketFrame.instanceType]
+  local hideInstanceTypes = not NS.db.global.showEverywhere
+    and not NS.INSTANCE_TYPES[NameplateTrinketFrame.instanceType]
   local hideNPCs = isNpc
   local hideDuringTestMode = not NS.db.global.test or IsInInstance()
   local hideIcons = hideDuringTestMode
@@ -1323,12 +1325,17 @@ function NameplateTrinket:COMBAT_LOG_EVENT_UNFILTERED()
   if hideDuringTestMode then
     return
   end
-  local hideInstanceTypes = not NS.db.global.showEverywhere and NS.INSTANCE_TYPES[NameplateTrinketFrame.instanceType]
+  local hideInstanceTypes = not NS.db.global.showEverywhere
+    and not NS.INSTANCE_TYPES[NameplateTrinketFrame.instanceType]
   if hideInstanceTypes then
     return
   end
   local _, subevent, _, sourceGUID, _, sourceFlags, _, destGUID, _, _, _ = CombatLogGetCurrentEventInfo()
   if not (sourceGUID or destGUID) then
+    return
+  end
+  local hideForSelf = not NS.db.global.showSelf and sourceGUID == UnitGUID("player")
+  if hideForSelf then
     return
   end
   -- @TODO: don't want to deal with Mind Controlled players right now since they become pets

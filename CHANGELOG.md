@@ -1,5 +1,10 @@
 # Nameplate Trinket
 
+## [v2.1.2](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.2) (2024-11-21)
+
+- fixing incorrect logic when checking for valid instance types
+- adding check for early return in combat log if not tracking self in settings
+
 ## [v2.1.1](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.1) (2024-11-21)
 
 - MASSIVE performance enhancements, like an insane difference based on latest research and testing
