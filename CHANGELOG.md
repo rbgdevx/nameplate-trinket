@@ -1,5 +1,20 @@
 # Nameplate Trinket
 
+## [v2.1.1](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.1) (2024-11-21)
+
+- MASSIVE performance enhancements, like an insane difference based on latest research and testing
+  - biggest thing is leveraging nameplate as frame directly instead of nameplate.UnitFrame
+- reduction in code util functions
+- reduced extra healer check code as its not needed for this addon
+- added a check to stop combat log code if outside of an instance and test mode is active
+- disable test mode when entering into an instance
+- creating a frame name to latch onto for OmniCC settings
+- variable name updates
+- adding fallback nameplate anchor
+- simplify refreshNameplates function
+- minor cleanup
+- while tracking trinket only we return early in combat log if not a trinket
+
 ## [v2.0.1](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.0.1) (2024-11-19)
 
 - Fixing event registration usage

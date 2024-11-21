@@ -7,8 +7,8 @@ local UnitGUID = UnitGUID
 local UnitIsUnit = UnitIsUnit
 local UnitIsPlayer = UnitIsPlayer
 local UnitIsFriend = UnitIsFriend
-local UnitIsEnemy = UnitIsEnemy
-local UnitCanAttack = UnitCanAttack
+-- local UnitIsEnemy = UnitIsEnemy
+-- local UnitCanAttack = UnitCanAttack
 local UnitHealth = UnitHealth
 local UnitIsDeadOrGhost = UnitIsDeadOrGhost
 -- local UnitReaction = UnitReaction
@@ -33,8 +33,8 @@ local bband = bit.band
 local GetNamePlateForUnit = C_NamePlate.GetNamePlateForUnit
 local GetNamePlates = C_NamePlate.GetNamePlates
 local After = C_Timer.After
-local GetUnitTooltip = C_TooltipInfo.GetUnit
-local GUIDIsPlayer = C_PlayerInfo.GUIDIsPlayer
+-- local GetUnitTooltip = C_TooltipInfo.GetUnit
+-- local GUIDIsPlayer = C_PlayerInfo.GUIDIsPlayer
 
 local SpellTextureByID = NS.SpellTextureByID
 local SpellNameByID = NS.SpellNameByID
@@ -73,7 +73,7 @@ local MaxCdDuration = 10 * 3600
 local ShowCooldownAnimation = true
 local InverseLogic = false
 local TimerTextUseRelativeScale = true
-local ShowInactiveCD = false
+local ShowInactiveCd = false
 local TestFrame
 local EventFrame
 local spellIDs = {
@@ -88,15 +88,15 @@ NS.AllCooldowns = AllCooldowns
 local Nameplates = {}
 local NameplatesVisible = {}
 local Healers = {}
-local HEALER_SPECS = {
-  ["Restoration Druid"] = 105,
-  ["Restoration Shaman"] = 264,
-  ["Mistweaver Monk"] = 270,
-  ["Holy Priest"] = 257,
-  ["Holy Paladin"] = 65,
-  ["Discipline Priest"] = 256,
-  ["Preservation Evoker"] = 1468,
-}
+-- local HEALER_SPECS = {
+--   ["Restoration Druid"] = 105,
+--   ["Restoration Shaman"] = 264,
+--   ["Mistweaver Monk"] = 270,
+--   ["Holy Priest"] = 257,
+--   ["Holy Paladin"] = 65,
+--   ["Discipline Priest"] = 256,
+--   ["Preservation Evoker"] = 1468,
+-- }
 local HEALER_SPELL_EVENTS = {
   ["SPELL_HEAL"] = true,
   ["SPELL_AURA_APPLIED"] = true,
@@ -158,18 +158,6 @@ local HEALER_SPELLS = {
   [373861] = "EVOKER", -- Temporal Anomaly
 }
 
-local function GetHealthbarFrame(originalFrame)
-  local frame = originalFrame
-  if frame.HealthBarsContainer then
-    frame = frame.HealthBarsContainer.healthBar
-  end
-  return frame
-end
-
-local function GetSecureNameplate(unit)
-  return GetNamePlateForUnit(unit, issecure())
-end
-
 local function GetSafeNameplateFrame(nameplate)
   if not nameplate then
     return nil
@@ -194,6 +182,18 @@ local function GetSafeNameplateFrame(nameplate)
   end
 
   return frame
+end
+
+local function GetHealthbarFrame(nameplate)
+  local frame = GetSafeNameplateFrame(nameplate)
+  if frame then
+    if frame.HealthBarsContainer then
+      return frame.HealthBarsContainer.healthBar
+    else
+      return frame
+    end
+  end
+  return nil
 end
 
 function NS.GetDefaultDBEntryForSpell()
@@ -229,84 +229,6 @@ function NS.BuildCooldowns()
       NS.db.global.SpellCDs[spellId] = nil
     end
   end
-end
-
-local function GetUnitInfo(unit, guid)
-  if not unit then
-    return nil
-  end
-
-  if not guid then
-    return nil
-  end
-
-  local tooltipData = GetUnitTooltip(unit)
-  if tooltipData then
-    if
-      tooltipData.guid
-      and tooltipData.lines
-      and #tooltipData.lines >= 3
-      and tooltipData.type == Enum.TooltipDataType.Unit
-    then
-      if GUIDIsPlayer(tooltipData.guid) then
-        if not Healers[tooltipData.guid] then
-          for _, line in ipairs(tooltipData.lines) do
-            if line and line.type == Enum.TooltipDataLineType.None then
-              if line.leftText and line.leftText ~= "" then
-                if Healers[tooltipData.guid] and HEALER_SPECS[line.leftText] then
-                  break
-                end
-                if Healers[tooltipData.guid] and not HEALER_SPECS[line.leftText] then
-                  Healers[tooltipData.guid] = nil
-                  break
-                end
-                if not Healers[tooltipData.guid] and HEALER_SPECS[line.leftText] then
-                  Healers[tooltipData.guid] = true
-                  break
-                end
-              end
-            end
-          end
-        end
-      end
-    end
-  end
-
-  local info = {}
-
-  local isTarget = UnitIsUnit(unit, "target")
-  local isSelf = UnitIsUnit(unit, "player")
-  local isPlayer = UnitIsPlayer(unit)
-  local isFriend = UnitIsFriend("player", unit)
-  local isEnemy = UnitIsEnemy("player", unit)
-  local canAttack = UnitCanAttack("player", unit)
-  local isNpc = not isPlayer
-  local isDeadOrGhost = UnitIsDeadOrGhost(unit)
-  local isAlive = not isDeadOrGhost and UnitHealth(unit) >= 1
-  local isHealer = NS.isHealer("player") or Healers[guid] and true or false
-
-  --[[
-  -- local r = UnitReaction("player", unit)
-  -- if r then
-  --   return r < 5 and "hostile" or "friendly"
-  -- end
-  ]]
-  -- local reaction = UnitReaction(unit, "player")
-  -- local isEnemy = (reaction and reaction < 4) and not isSelf
-  -- local isNeutral = (reaction and reaction == 4) and not isSelf
-  -- local isFriend = (reaction and reaction >= 5) and not isSelf
-
-  info.isTarget = isTarget
-  info.isSelf = isSelf
-  info.isPlayer = isPlayer
-  info.isFriend = isFriend
-  info.isEnemy = isEnemy
-  info.canAttack = canAttack
-  info.isNpc = isNpc
-  info.isAlive = isAlive
-  info.isHealer = isHealer
-
-  return info
 end
 
 local CDSortFunctions = {
@@ -392,10 +314,10 @@ local function SortAuras(cds)
   return t
 end
 
-local function SetFrameSize(frame)
+local function SetFrameSize(nameplate)
   local maxWidth, maxHeight = 0, 0
-  if frame.nptIconFrame then
-    for _, icon in pairs(frame.nptIcons) do
+  if nameplate.nptIconFrame then
+    for _, icon in pairs(nameplate.nptIcons) do
       if icon.shown then
         maxHeight = mmax(maxHeight, icon.frame:GetHeight())
         maxWidth = maxWidth + icon.frame:GetWidth() + NS.db.global.iconSpacing
@@ -403,15 +325,15 @@ local function SetFrameSize(frame)
     end
     maxWidth = maxWidth - NS.db.global.iconSpacing
     maxHeight = maxHeight -- maxHeight - NS.db.global.iconSpacing
-    frame.nptIconFrame:SetWidth(mmax(maxWidth, 1))
-    frame.nptIconFrame:SetHeight(mmax(maxHeight, 1))
+    nameplate.nptIconFrame:SetWidth(mmax(maxWidth, 1))
+    nameplate.nptIconFrame:SetHeight(mmax(maxHeight, 1))
   end
 end
 
-local function SetTestFrameSize(frame)
+local function SetTestFrameSize(nameplate)
   local maxWidth, maxHeight = 0, 0
-  if frame.nptTestIconFrame then
-    for _, icon in pairs(frame.nptTestIcons) do
+  if nameplate.nptTestIconFrame then
+    for _, icon in pairs(nameplate.nptTestIcons) do
       if icon.shown then
         maxHeight = mmax(maxHeight, icon.frame:GetHeight())
         maxWidth = maxWidth + icon.frame:GetWidth() + NS.db.global.iconSpacing
@@ -419,12 +341,12 @@ local function SetTestFrameSize(frame)
     end
     maxWidth = maxWidth - NS.db.global.iconSpacing
     maxHeight = maxHeight -- maxHeight - NS.db.global.iconSpacing
-    frame.nptTestIconFrame:SetWidth(mmax(maxWidth, 1))
-    frame.nptTestIconFrame:SetHeight(mmax(maxHeight, 1))
+    nameplate.nptTestIconFrame:SetWidth(mmax(maxWidth, 1))
+    nameplate.nptTestIconFrame:SetHeight(mmax(maxHeight, 1))
   end
 end
 
-function HideIcon(icon, frame)
+function HideIcon(icon, nameplate)
   icon.border:Hide()
   icon.borderState = nil
   if icon.cooldownText then
@@ -438,10 +360,10 @@ function HideIcon(icon, frame)
     icon.glowTexture = nil
     icon.glow = false
   end
-  SetFrameSize(frame)
+  SetFrameSize(nameplate)
 end
 
-function HideTestIcon(icon, frame)
+function HideTestIcon(icon, nameplate)
   icon.border:Hide()
   icon.borderState = nil
   if icon.cooldownText then
@@ -455,10 +377,10 @@ function HideTestIcon(icon, frame)
     icon.glowTexture = nil
     icon.glow = false
   end
-  SetTestFrameSize(frame)
+  SetTestFrameSize(nameplate)
 end
 
-function ShowIcon(icon, frame)
+function ShowIcon(icon, nameplate)
   if icon.cooldownText then
     icon.cooldownText:Show()
   end
@@ -470,10 +392,10 @@ function ShowIcon(icon, frame)
     icon.frame:Show()
     icon.shown = true
   end
-  SetFrameSize(frame)
+  SetFrameSize(nameplate)
 end
 
-function ShowTestIcon(icon, frame)
+function ShowTestIcon(icon, nameplate)
   if icon.cooldownText then
     icon.cooldownText:Show()
   end
@@ -485,7 +407,7 @@ function ShowTestIcon(icon, frame)
     icon.frame:Show()
     icon.shown = true
   end
-  SetTestFrameSize(frame)
+  SetTestFrameSize(nameplate)
 end
 
 local function SetGlow(icon, spellID, isActive)
@@ -537,17 +459,17 @@ local function SetTexture(icon, texture, isActive)
   end
 end
 
-local function PlaceIcon(frame, icon, iconIndex)
+local function PlaceIcon(nameplate, icon, iconIndex)
   icon.frame:ClearAllPoints()
-  local index = iconIndex == nil and frame.nptIconCount or (iconIndex - 1)
+  local index = iconIndex == nil and nameplate.nptIconCount or (iconIndex - 1)
   if index == 0 then
     if NS.db.global.growDirection == "RIGHT" then
-      icon.frame:SetPoint("LEFT", frame.nptIconFrame, "LEFT", 0, 0)
+      icon.frame:SetPoint("LEFT", nameplate.nptIconFrame, "LEFT", 0, 0)
     elseif NS.db.global.growDirection == "LEFT" then
-      icon.frame:SetPoint("RIGHT", frame.nptIconFrame, "RIGHT", 0, 0)
+      icon.frame:SetPoint("RIGHT", nameplate.nptIconFrame, "RIGHT", 0, 0)
     end
   else
-    local previousIcon = frame.nptIcons[index]
+    local previousIcon = nameplate.nptIcons[index]
     if NS.db.global.growDirection == "RIGHT" then
       icon.frame:SetPoint("LEFT", previousIcon.frame, "RIGHT", NS.db.global.iconSpacing, 0)
     elseif NS.db.global.growDirection == "LEFT" then
@@ -556,17 +478,17 @@ local function PlaceIcon(frame, icon, iconIndex)
   end
 end
 
-local function PlaceTestIcon(frame, icon, iconIndex)
+local function PlaceTestIcon(nameplate, icon, iconIndex)
   icon.frame:ClearAllPoints()
-  local index = iconIndex == nil and frame.nptTestIconCount or (iconIndex - 1)
+  local index = iconIndex == nil and nameplate.nptTestIconCount or (iconIndex - 1)
   if index == 0 then
     if NS.db.global.growDirection == "RIGHT" then
-      icon.frame:SetPoint("LEFT", frame.nptTestIconFrame, "LEFT", 0, 0)
+      icon.frame:SetPoint("LEFT", nameplate.nptTestIconFrame, "LEFT", 0, 0)
     elseif NS.db.global.growDirection == "LEFT" then
-      icon.frame:SetPoint("RIGHT", frame.nptTestIconFrame, "RIGHT", 0, 0)
+      icon.frame:SetPoint("RIGHT", nameplate.nptTestIconFrame, "RIGHT", 0, 0)
     end
   else
-    local previousIcon = frame.nptTestIcons[index]
+    local previousIcon = nameplate.nptTestIcons[index]
     if NS.db.global.growDirection == "RIGHT" then
       icon.frame:SetPoint("LEFT", previousIcon.frame, "RIGHT", NS.db.global.iconSpacing, 0)
     elseif NS.db.global.growDirection == "LEFT" then
@@ -640,8 +562,9 @@ local function SetTestCooldown(icon, remainingTime, started, cooldownLength, isA
 end
 
 -- frame = nameplate.UnitFrame
-function CreateIcon(frame, spellID)
-  local iconFrame = CreateFrame("Frame", nil, frame.nptIconFrame)
+function CreateIcon(nameplate, spellID, index)
+  local iconFrame =
+    CreateFrame("Frame", AddonName .. "IconFrame" .. "Spell" .. spellID .. "Index" .. index, nameplate.nptIconFrame)
   local icon = {}
   icon.spellID = spellID
 
@@ -649,7 +572,7 @@ function CreateIcon(frame, spellID)
   iconFrame:SetHeight(NS.db.global.iconSize)
   iconFrame:SetAlpha(NS.db.global.iconAlpha)
   icon.frame = iconFrame
-  PlaceIcon(frame, icon)
+  PlaceIcon(nameplate, icon)
   iconFrame:Hide()
 
   icon.cooldownFrame = CreateFrame("Cooldown", nil, iconFrame, "CooldownFrameTemplate")
@@ -686,15 +609,19 @@ function CreateIcon(frame, spellID)
     icon.cooldownText = nil
   end
 
-  frame.nptIconCount = frame.nptIconCount + 1
-  tinsert(frame.nptIcons, icon)
+  nameplate.nptIconCount = nameplate.nptIconCount + 1
+  tinsert(nameplate.nptIcons, icon)
 
   return icon
 end
 
 -- frame = nameplate.UnitFrame
-function CreateTestIcon(frame, spellID)
-  local iconFrame = CreateFrame("Frame", nil, frame.nptTestIconFrame)
+function CreateTestIcon(nameplate, spellID, index)
+  local iconFrame = CreateFrame(
+    "Frame",
+    AddonName .. "TestIconFrame" .. "Spell" .. spellID .. "Index" .. index,
+    nameplate.nptTestIconFrame
+  )
   local icon = {}
   icon.spellID = spellID
 
@@ -702,7 +629,7 @@ function CreateTestIcon(frame, spellID)
   iconFrame:SetHeight(NS.db.global.iconSize)
   iconFrame:SetAlpha(NS.db.global.iconAlpha)
   icon.frame = iconFrame
-  PlaceTestIcon(frame, icon)
+  PlaceTestIcon(nameplate, icon)
   iconFrame:Hide()
 
   icon.cooldownFrame = CreateFrame("Cooldown", nil, iconFrame, "CooldownFrameTemplate")
@@ -739,8 +666,8 @@ function CreateTestIcon(frame, spellID)
     icon.cooldownText = nil
   end
 
-  frame.nptTestIconCount = frame.nptTestIconCount + 1
-  tinsert(frame.nptTestIcons, icon)
+  nameplate.nptTestIconCount = nameplate.nptTestIconCount + 1
+  tinsert(nameplate.nptTestIcons, icon)
 
   return icon
 end
@@ -750,7 +677,7 @@ local function FilterSpell(dbInfo, remainingTime, isActive)
     return false
   end
 
-  if not ShowInactiveCD and not isActive then
+  if not ShowInactiveCd and not isActive then
     return false
   end
 
@@ -761,16 +688,8 @@ local function FilterSpell(dbInfo, remainingTime, isActive)
   return true
 end
 
-local function addIcons(frame, guid)
-  if not frame.unit then
-    return
-  end
-
-  if not guid then
-    return
-  end
-
-  if not frame.nptIconCount then
+local function addIcons(nameplate, guid)
+  if not nameplate.nptIconCount then
     return
   end
 
@@ -778,52 +697,44 @@ local function addIcons(frame, guid)
   if SpellsPerPlayerGUID[guid] then
     local currentTime = GetTime()
     local sortedCDs = SortAuras(SpellsPerPlayerGUID[guid])
-    for _, spellInfo in pairs(sortedCDs) do
+    for index, spellInfo in pairs(sortedCDs) do
       local spellID = spellInfo.spellID
-      local isActiveCD = spellInfo.expires > currentTime
+      local isActive = spellInfo.expires > currentTime
       if InverseLogic then
-        isActiveCD = not isActiveCD
+        isActive = not isActive
       end
       local dbInfo = NS.db.global.SpellCDs[spellID]
       local remainingTime = spellInfo.expires - currentTime
-      if FilterSpell(dbInfo, remainingTime, isActiveCD) then
-        if counter > frame.nptIconCount then
-          CreateIcon(frame, spellID)
+      if FilterSpell(dbInfo, remainingTime, isActive) then
+        if counter > nameplate.nptIconCount then
+          CreateIcon(nameplate, spellID, index)
         end
-        local icon = frame.nptIcons[counter]
-        SetTexture(icon, spellInfo.texture, isActiveCD)
-        SetBorder(icon, spellID, isActiveCD)
+        local icon = nameplate.nptIcons[counter]
+        SetTexture(icon, spellInfo.texture, isActive)
+        SetBorder(icon, spellID, isActive)
         if NS.db.global.enableGlow and Trinkets[spellID] then
           dbInfo.glow = GLOW_TIME_INFINITE
-          SetGlow(icon, spellID, isActiveCD)
+          SetGlow(icon, spellID, isActive)
         end
-        SetCooldown(icon, remainingTime, spellInfo.started, spellInfo.duration, isActiveCD)
+        SetCooldown(icon, remainingTime, spellInfo.started, spellInfo.duration, isActive)
         if not icon.shown then
-          ShowIcon(icon, frame)
+          ShowIcon(icon, nameplate)
         end
         counter = counter + 1
       end
     end
   end
 
-  for k = counter, frame.nptIconCount do
-    local icon = frame.nptIcons[k]
+  for k = counter, nameplate.nptIconCount do
+    local icon = nameplate.nptIcons[k]
     if icon.shown then
-      HideIcon(icon, frame)
+      HideIcon(icon, nameplate)
     end
   end
 end
 
-local function addTestIcons(frame, guid)
-  if not frame.unit then
-    return
-  end
-
-  if not guid then
-    return
-  end
-
-  if not frame.nptTestIconCount then
+local function addTestIcons(nameplate, guid)
+  if not nameplate.nptTestIconCount then
     return
   end
 
@@ -831,161 +742,269 @@ local function addTestIcons(frame, guid)
   if TestSpellsPerPlayerGUID[guid] then
     local currentTime = GetTime()
     local sortedCDs = SortAuras(TestSpellsPerPlayerGUID[guid])
-    for _, spellInfo in ipairs(sortedCDs) do
+    for index, spellInfo in ipairs(sortedCDs) do
       local spellID = spellInfo.spellID
-      local isActiveCD = spellInfo.expires > currentTime
+      local isActive = spellInfo.expires > currentTime
       if InverseLogic then
-        isActiveCD = not isActiveCD
+        isActive = not isActive
       end
       local dbInfo = NS.db.global.SpellCDs[spellID]
       local remainingTime = spellInfo.expires - currentTime
-      if FilterSpell(dbInfo, remainingTime, isActiveCD) then
-        if counter > frame.nptTestIconCount then
-          CreateTestIcon(frame, spellID)
+      if FilterSpell(dbInfo, remainingTime, isActive) then
+        if counter > nameplate.nptTestIconCount then
+          CreateTestIcon(nameplate, spellID, index)
         end
-        local icon = frame.nptTestIcons[counter]
-        SetTexture(icon, spellInfo.texture, isActiveCD)
-        SetBorder(icon, spellID, isActiveCD)
+        local icon = nameplate.nptTestIcons[counter]
+        SetTexture(icon, spellInfo.texture, isActive)
+        SetBorder(icon, spellID, isActive)
         if NS.db.global.enableGlow and Trinkets[spellID] then
           dbInfo.glow = GLOW_TIME_INFINITE
-          SetGlow(icon, spellID, isActiveCD)
+          SetGlow(icon, spellID, isActive)
         end
-        SetTestCooldown(icon, remainingTime, spellInfo.started, spellInfo.duration, isActiveCD)
+        SetTestCooldown(icon, remainingTime, spellInfo.started, spellInfo.duration, isActive)
         if not icon.shown then
-          ShowTestIcon(icon, frame)
+          ShowTestIcon(icon, nameplate)
         end
         counter = counter + 1
       end
     end
   end
 
-  for k = counter, frame.nptTestIconCount do
-    local icon = frame.nptTestIcons[k]
+  for k = counter, nameplate.nptTestIconCount do
+    local icon = nameplate.nptTestIcons[k]
     if icon.shown then
-      HideTestIcon(icon, frame)
+      HideTestIcon(icon, nameplate)
     end
   end
 end
 
-local function addNameplateIcons(frame, guid)
-  if not frame.unit then
+local function addNameplateIcons(nameplate, guid)
+  if not nameplate.namePlateUnitToken then
     return
   end
 
-  if not guid then
-    return
-  end
+  local unit = nameplate.namePlateUnitToken
 
-  local info = GetUnitInfo(frame.unit, guid)
+  -- if not nameplate.healerChecked then
+  --   nameplate.healerChecked = true
+  --   local tooltipData = GetUnitTooltip(unit)
+  --   if tooltipData then
+  --     if
+  --       tooltipData.guid
+  --       and tooltipData.lines
+  --       and #tooltipData.lines >= 3
+  --       and tooltipData.type == Enum.TooltipDataType.Unit
+  --     then
+  --       if GUIDIsPlayer(tooltipData.guid) then
+  --         if not Healers[tooltipData.guid] then
+  --           for _, line in ipairs(tooltipData.lines) do
+  --             if line and line.type == Enum.TooltipDataLineType.None then
+  --               if line.leftText and line.leftText ~= "" then
+  --                 if Healers[tooltipData.guid] and HEALER_SPECS[line.leftText] then
+  --                   break
+  --                 end
+  --                 if Healers[tooltipData.guid] and not HEALER_SPECS[line.leftText] then
+  --                   Healers[tooltipData.guid] = nil
+  --                   break
+  --                 end
+  --                 if not Healers[tooltipData.guid] and HEALER_SPECS[line.leftText] then
+  --                   Healers[tooltipData.guid] = true
+  --                   break
+  --                 end
+  --               end
+  --             end
+  --           end
+  --         end
+  --       end
+  --     end
+  --   end
+  -- end
 
-  if not info then
-    return
-  end
+  --[[
+  -- local r = UnitReaction("player", unit)
+  -- if r then
+  --   return r < 5 and "hostile" or "friendly"
+  -- end
+  ]]
+  -- local reaction = UnitReaction(unit, "player")
+  -- local isEnemy = (reaction and reaction < 4) and not isSelf
+  -- local isNeutral = (reaction and reaction == 4) and not isSelf
+  -- local isFriend = (reaction and reaction >= 5) and not isSelf
 
-  local hideAllies = not NS.db.global.showOnAllies and info.isFriend
+  local isPlayer = UnitIsPlayer(unit)
+  local isNpc = not isPlayer
+  local isSelf = UnitIsUnit(unit, "player")
+  local isFriend = UnitIsFriend("player", unit)
+  -- local isEnemy = UnitIsEnemy("player", unit)
+  -- local canAttack = UnitCanAttack("player", unit)
+  -- local isHealer = NS.isHealer("player") or Healers[guid] and true or false
+  local isDeadOrGhost = UnitIsDeadOrGhost(unit)
+  local isAlive = not isDeadOrGhost and UnitHealth(unit) >= 1
+  local hideDead = not isAlive
+  local isTarget = UnitIsUnit(unit, "target")
   local targetExists = UnitExists("target")
-  local targetIsUnit = targetExists and info.isTarget -- UnitGUID("target") == guid
+  local targetIsUnit = targetExists and isTarget
   local hideNonTargets = NS.db.global.targetOnly and (not targetExists or not targetIsUnit)
-  local hideOnSelf = not NS.db.global.showSelf and info.isSelf
+  local hideAllies = not NS.db.global.showOnAllies and isFriend
+  local hideOnSelf = not NS.db.global.showSelf and isSelf
   local hideInstanceTypes = not NS.db.global.showEverywhere and NS.INSTANCE_TYPES[NameplateTrinketFrame.instanceType]
-  local hideIcons = NS.db.global.test
-    or info.isNpc
+  local hideNPCs = isNpc
+  local hideDuringTestMode = NS.db.global.test and not IsInInstance()
+  local hideIcons = hideDuringTestMode
+    or hideNPCs
     or hideOnSelf
-    or not info.isAlive
+    or hideDead
     or hideAllies
     or hideNonTargets
     or hideInstanceTypes
 
   if hideIcons then
-    if frame.nptIconFrame then
-      frame.nptIconFrame:Hide()
+    if nameplate.nptIconFrame then
+      nameplate.nptIconFrame:Hide()
     end
     return
   end
 
-  if not frame.nptIconFrame then
-    frame.nptIconFrame = CreateFrame("Frame", nil, frame.rbgdAnchorFrame)
-    frame.nptIconFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
-    frame.nptIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
-    frame.nptIconFrame:SetWidth(NS.db.global.iconSize)
-    frame.nptIconFrame:SetHeight(NS.db.global.iconSize)
-    frame.nptIconFrame:SetFrameStrata(NS.db.global.frameStrata)
-    frame.nptIconFrame:ClearAllPoints()
+  if not nameplate.nptIconFrame then
+    nameplate.nptIconFrame = CreateFrame("Frame", nil, nameplate.rbgdAnchorFrame)
+    nameplate.nptIconFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
+    nameplate.nptIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
+    nameplate.nptIconFrame:SetWidth(NS.db.global.iconSize)
+    nameplate.nptIconFrame:SetHeight(NS.db.global.iconSize)
+    nameplate.nptIconFrame:SetFrameStrata(NS.db.global.frameStrata)
+    nameplate.nptIconFrame:ClearAllPoints()
+    local frame = GetSafeNameplateFrame(nameplate)
+    local anchorFrame = frame and frame.healthBar or nameplate
     -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
-    frame.nptIconFrame:SetPoint(
+    nameplate.nptIconFrame:SetPoint(
       NS.db.global.anchor,
-      frame.healthBar,
+      anchorFrame,
       NS.db.global.anchorTo,
       NS.db.global.offsetX,
       NS.db.global.offsetY
     )
-    frame.nptIconFrame:SetScale(1)
-    frame.nptIconFrame:Show()
+    nameplate.nptIconFrame:SetScale(1)
+    nameplate.nptIconFrame:Show()
+    nameplate.nptIcons = {}
+    nameplate.nptIconCount = 0
   end
 
-  addIcons(frame, guid)
+  addIcons(nameplate, guid)
 end
 NS.addNameplateIcons = addNameplateIcons
 
-local function addNameplateTestIcons(frame, guid)
-  if not frame.unit then
+local function addNameplateTestIcons(nameplate, guid)
+  if not nameplate.namePlateUnitToken then
     return
   end
 
-  if not guid then
-    return
-  end
+  local unit = nameplate.namePlateUnitToken
 
-  local info = GetUnitInfo(frame.unit, guid)
+  -- if not nameplate.healerChecked then
+  --   nameplate.healerChecked = true
+  --   local tooltipData = GetUnitTooltip(unit)
+  --   if tooltipData then
+  --     if
+  --       tooltipData.guid
+  --       and tooltipData.lines
+  --       and #tooltipData.lines >= 3
+  --       and tooltipData.type == Enum.TooltipDataType.Unit
+  --     then
+  --       if GUIDIsPlayer(tooltipData.guid) then
+  --         if not Healers[tooltipData.guid] then
+  --           for _, line in ipairs(tooltipData.lines) do
+  --             if line and line.type == Enum.TooltipDataLineType.None then
+  --               if line.leftText and line.leftText ~= "" then
+  --                 if Healers[tooltipData.guid] and HEALER_SPECS[line.leftText] then
+  --                   break
+  --                 end
+  --                 if Healers[tooltipData.guid] and not HEALER_SPECS[line.leftText] then
+  --                   Healers[tooltipData.guid] = nil
+  --                   break
+  --                 end
+  --                 if not Healers[tooltipData.guid] and HEALER_SPECS[line.leftText] then
+  --                   Healers[tooltipData.guid] = true
+  --                   break
+  --                 end
+  --               end
+  --             end
+  --           end
+  --         end
+  --       end
+  --     end
+  --   end
+  -- end
 
-  if not info then
-    return
-  end
+  --[[
+  -- local r = UnitReaction("player", unit)
+  -- if r then
+  --   return r < 5 and "hostile" or "friendly"
+  -- end
+  ]]
+  -- local reaction = UnitReaction(unit, "player")
+  -- local isEnemy = (reaction and reaction < 4) and not isSelf
+  -- local isNeutral = (reaction and reaction == 4) and not isSelf
+  -- local isFriend = (reaction and reaction >= 5) and not isSelf
 
-  local hideAllies = not NS.db.global.showOnAllies and info.isFriend
+  local isPlayer = UnitIsPlayer(unit)
+  local isNpc = not isPlayer
+  local isSelf = UnitIsUnit(unit, "player")
+  local isFriend = UnitIsFriend("player", unit)
+  -- local isEnemy = UnitIsEnemy("player", unit)
+  -- local canAttack = UnitCanAttack("player", unit)
+  -- local isHealer = NS.isHealer("player") or Healers[guid] and true or false
+  local isDeadOrGhost = UnitIsDeadOrGhost(unit)
+  local isAlive = not isDeadOrGhost and UnitHealth(unit) >= 1
+  local hideDead = not isAlive
+  local isTarget = UnitIsUnit(unit, "target")
   local targetExists = UnitExists("target")
-  local targetIsUnit = targetExists and info.isTarget -- UnitGUID("target") == guid
+  local targetIsUnit = targetExists and isTarget
   local hideNonTargets = NS.db.global.targetOnly and (not targetExists or not targetIsUnit)
-  local hideOnSelf = not NS.db.global.showSelf and info.isSelf
+  local hideAllies = not NS.db.global.showOnAllies and isFriend
+  local hideOnSelf = not NS.db.global.showSelf and isSelf
   local hideInstanceTypes = not NS.db.global.showEverywhere and NS.INSTANCE_TYPES[NameplateTrinketFrame.instanceType]
-  local hideIcons = not NS.db.global.test
-    or info.isNpc
+  local hideNPCs = isNpc
+  local hideDuringTestMode = not NS.db.global.test or IsInInstance()
+  local hideIcons = hideDuringTestMode
+    or hideNPCs
     or hideOnSelf
-    or not info.isAlive
+    or hideDead
     or hideAllies
     or hideNonTargets
     or hideInstanceTypes
 
   if hideIcons then
-    if frame.nptTestIconFrame then
-      frame.nptTestIconFrame:Hide()
+    if nameplate.nptTestIconFrame then
+      nameplate.nptTestIconFrame:Hide()
     end
     return
   end
 
-  if not frame.nptTestIconFrame then
-    frame.nptTestIconFrame = CreateFrame("Frame", nil, frame.rbgdAnchorFrame)
-    frame.nptTestIconFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
-    frame.nptTestIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
-    frame.nptTestIconFrame:SetWidth(NS.db.global.iconSize)
-    frame.nptTestIconFrame:SetHeight(NS.db.global.iconSize)
-    frame.nptTestIconFrame:SetFrameStrata(NS.db.global.frameStrata)
-    frame.nptTestIconFrame:SetScale(1)
-    frame.nptTestIconFrame:ClearAllPoints()
+  if not nameplate.nptTestIconFrame then
+    nameplate.nptTestIconFrame = CreateFrame("Frame", nil, nameplate.rbgdAnchorFrame)
+    nameplate.nptTestIconFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
+    nameplate.nptTestIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
+    nameplate.nptTestIconFrame:SetWidth(NS.db.global.iconSize)
+    nameplate.nptTestIconFrame:SetHeight(NS.db.global.iconSize)
+    nameplate.nptTestIconFrame:SetFrameStrata(NS.db.global.frameStrata)
+    nameplate.nptTestIconFrame:SetScale(1)
+    nameplate.nptTestIconFrame:ClearAllPoints()
+    local frame = GetSafeNameplateFrame(nameplate)
+    local anchorFrame = frame and frame.healthBar or nameplate
     -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
-    frame.nptTestIconFrame:SetPoint(
+    nameplate.nptTestIconFrame:SetPoint(
       NS.db.global.anchor,
-      frame.healthBar,
+      anchorFrame,
       NS.db.global.anchorTo,
       NS.db.global.offsetX,
       NS.db.global.offsetY
     )
-    frame.nptTestIconFrame:Show()
-    frame.nptTestIcons = {}
-    frame.nptTestIconCount = 0
+    nameplate.nptTestIconFrame:Show()
+    nameplate.nptTestIcons = {}
+    nameplate.nptTestIconCount = 0
   end
 
-  addTestIcons(frame, guid)
+  addTestIcons(nameplate, guid)
 end
 NS.addNameplateTestIcons = addNameplateTestIcons
 
@@ -995,34 +1014,11 @@ local function refreshNameplates(override)
   end
 
   for _, nameplate in pairs(GetNamePlates(issecure())) do
-    local frame = GetSafeNameplateFrame(nameplate)
-
-    if frame then
-      local guid = UnitGUID(frame.unit)
-
-      NameplatesVisible[frame] = guid
-
-      if not Nameplates[frame] then
-        Nameplates[frame] = true
-      end
-
-      if not frame.rbgdAnchorFrame then
-        local attachmentFrame = GetHealthbarFrame(frame)
-        frame.rbgdAnchorFrame = CreateFrame("Frame", nil, attachmentFrame)
-      end
-
-      if frame.nptTestIconFrame ~= nil then
-        frame.nptTestIconFrame:Show()
-      end
-      if frame.nptIconFrame ~= nil then
-        frame.nptIconFrame:Show()
-      end
+    if nameplate and nameplate.namePlateUnitToken then
+      local guid = UnitGUID(nameplate.namePlateUnitToken)
 
       if guid then
-        addNameplateIcons(frame, guid)
-        if NS.db.global.test then
-          addNameplateTestIcons(frame, guid)
-        end
+        NameplateTrinket:attachToNameplate(nameplate, guid)
       end
     end
   end
@@ -1030,8 +1026,8 @@ end
 
 function NS.RefreshTestSpells()
   local currentTime = GetTime()
-  for frame, guid in pairs(NameplatesVisible) do
-    if frame and guid then
+  for nameplate, guid in pairs(NameplatesVisible) do
+    if nameplate and guid then
       if not TestSpellsPerPlayerGUID[guid] then
         TestSpellsPerPlayerGUID[guid] = {}
       end
@@ -1077,7 +1073,7 @@ function NS.RefreshTestSpells()
           end
         end
       end
-      addNameplateTestIcons(frame, guid)
+      addNameplateTestIcons(nameplate, guid)
     end
   end
 end
@@ -1087,18 +1083,20 @@ function NS.DisableTestMode()
   NameplateTrinketFrame:UnregisterEvent("PLAYER_LOGOUT")
   TestFrame:SetScript("OnUpdate", nil)
   twipe(TestSpellsPerPlayerGUID)
-  for frame in pairs(Nameplates) do
-    if frame and frame.unit and frame.nptTestIconFrame then
-      frame.nptTestIconFrame:Hide()
-      frame.nptTestIconFrame = nil
-      frame.nptTestIcons = {}
-      frame.nptTestIconCount = 0
+  for nameplate in pairs(Nameplates) do
+    if nameplate and nameplate.nptTestIconFrame then
+      nameplate.nptTestIconFrame:Hide()
+      nameplate.nptTestIconFrame = nil
+      nameplate.nptTestIcons = {}
+      nameplate.nptTestIconCount = 0
     end
   end
 end
 
 function NameplateTrinket:PLAYER_LOGOUT()
-  NS.DisableTestMode()
+  if NS.db.global.test and TestFrame then
+    NS.DisableTestMode()
+  end
 end
 
 function NS.EnableTestMode()
@@ -1107,7 +1105,7 @@ function NS.EnableTestMode()
   twipe(TestSpellsPerPlayerGUID)
   NS.RefreshTestSpells()
   if not TestFrame then
-    TestFrame = CreateFrame("frame")
+    TestFrame = CreateFrame("Frame")
   end
   local timeElapsed = 0
   TestFrame:SetScript("OnUpdate", function(_, elapsed)
@@ -1119,77 +1117,27 @@ function NS.EnableTestMode()
   end)
 end
 
-function ReallocateTestIcons(clearSpells)
-  for frame in pairs(Nameplates) do
-    if frame and frame.unit and frame.nptTestIconFrame then
-      frame.nptTestIconFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
-      frame.nptTestIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
-      frame.nptTestIconFrame:ClearAllPoints()
-      frame.nptTestIconFrame:SetPoint(
-        NS.db.global.anchor,
-        frame.healthBar,
-        NS.db.global.anchorTo,
-        NS.db.global.offsetX,
-        NS.db.global.offsetY
-      )
-      local counter = 0
-      for index, icon in pairs(frame.nptTestIcons) do
-        icon.frame:SetWidth(NS.db.global.iconSize)
-        icon.frame:SetHeight(NS.db.global.iconSize)
-        icon.frame:SetAlpha(NS.db.global.iconAlpha)
-        PlaceTestIcon(frame, icon, index)
-        icon.texture:SetTexCoord(0, 1, 0, 1)
-        if icon.cooldownText then
-          icon.cooldownText:SetTextColor(0.7, 1, 0, 1)
-          icon.cooldownText:ClearAllPoints()
-          icon.cooldownText:SetPoint("CENTER", icon.frame, "CENTER", 0, 0)
-
-          local fontScale = 1
-          local timerScale = NS.db.global.iconSize - NS.db.global.iconSize / 2
-          local timerTextSize = mceil(timerScale)
-
-          if TimerTextUseRelativeScale then
-            icon.cooldownText:SetFont("Fonts\\FRIZQT__.TTF", mceil(timerScale * fontScale), "OUTLINE")
-          else
-            icon.cooldownText:SetFont("Fonts\\FRIZQT__.TTF", timerTextSize, "OUTLINE")
-          end
-        end
-        if clearSpells then
-          HideTestIcon(icon, frame)
-        end
-        counter = counter + 1
-      end
-      SetTestFrameSize(frame)
-    end
-  end
-  if clearSpells then
-    for frame, guid in pairs(NameplatesVisible) do
-      if frame and guid then
-        addNameplateTestIcons(frame, guid)
-      end
-    end
-  end
-end
-
 function ReallocateIcons(clearSpells)
-  for frame in pairs(Nameplates) do
-    if frame and frame.unit and frame.nptIconFrame then
-      frame.nptIconFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
-      frame.nptIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
-      frame.nptIconFrame:ClearAllPoints()
-      frame.nptIconFrame:SetPoint(
+  for nameplate in pairs(Nameplates) do
+    if nameplate and nameplate.nptIconFrame then
+      nameplate.nptIconFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
+      nameplate.nptIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
+      nameplate.nptIconFrame:ClearAllPoints()
+      local frame = GetSafeNameplateFrame(nameplate)
+      local anchorFrame = frame and frame.healthBar or nameplate
+      nameplate.nptIconFrame:SetPoint(
         NS.db.global.anchor,
-        frame.healthBar,
+        anchorFrame,
         NS.db.global.anchorTo,
         NS.db.global.offsetX,
         NS.db.global.offsetY
       )
       local counter = 0
-      for index, icon in pairs(frame.nptIcons) do
+      for index, icon in pairs(nameplate.nptIcons) do
         icon.frame:SetWidth(NS.db.global.iconSize)
         icon.frame:SetHeight(NS.db.global.iconSize)
         icon.frame:SetAlpha(NS.db.global.iconAlpha)
-        PlaceIcon(frame, icon, index)
+        PlaceIcon(nameplate, icon, index)
         icon.texture:SetTexCoord(0, 1, 0, 1)
         if icon.cooldownText then
           icon.cooldownText:SetTextColor(0.7, 1, 0, 1)
@@ -1207,63 +1155,113 @@ function ReallocateIcons(clearSpells)
           end
         end
         if clearSpells then
-          HideIcon(icon, frame)
+          HideIcon(icon, nameplate)
         end
         counter = counter + 1
       end
-      SetTestFrameSize(frame)
+      SetTestFrameSize(nameplate)
     end
   end
   if clearSpells then
-    for frame, guid in pairs(NameplatesVisible) do
-      if frame and guid then
-        addNameplateIcons(frame, guid)
+    for nameplate, guid in pairs(NameplatesVisible) do
+      if nameplate and guid then
+        addNameplateIcons(nameplate, guid)
+      end
+    end
+  end
+end
+
+function ReallocateTestIcons(clearSpells)
+  for nameplate in pairs(Nameplates) do
+    if nameplate and nameplate.nptTestIconFrame then
+      nameplate.nptTestIconFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
+      nameplate.nptTestIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
+      nameplate.nptTestIconFrame:ClearAllPoints()
+      local frame = GetSafeNameplateFrame(nameplate)
+      local anchorFrame = frame and frame.healthBar or nameplate
+      nameplate.nptTestIconFrame:SetPoint(
+        NS.db.global.anchor,
+        anchorFrame,
+        NS.db.global.anchorTo,
+        NS.db.global.offsetX,
+        NS.db.global.offsetY
+      )
+      local counter = 0
+      for index, icon in pairs(nameplate.nptTestIcons) do
+        icon.frame:SetWidth(NS.db.global.iconSize)
+        icon.frame:SetHeight(NS.db.global.iconSize)
+        icon.frame:SetAlpha(NS.db.global.iconAlpha)
+        PlaceTestIcon(nameplate, icon, index)
+        icon.texture:SetTexCoord(0, 1, 0, 1)
+        if icon.cooldownText then
+          icon.cooldownText:SetTextColor(0.7, 1, 0, 1)
+          icon.cooldownText:ClearAllPoints()
+          icon.cooldownText:SetPoint("CENTER", icon.frame, "CENTER", 0, 0)
+
+          local fontScale = 1
+          local timerScale = NS.db.global.iconSize - NS.db.global.iconSize / 2
+          local timerTextSize = mceil(timerScale)
+
+          if TimerTextUseRelativeScale then
+            icon.cooldownText:SetFont("Fonts\\FRIZQT__.TTF", mceil(timerScale * fontScale), "OUTLINE")
+          else
+            icon.cooldownText:SetFont("Fonts\\FRIZQT__.TTF", timerTextSize, "OUTLINE")
+          end
+        end
+        if clearSpells then
+          HideTestIcon(icon, nameplate)
+        end
+        counter = counter + 1
+      end
+      SetTestFrameSize(nameplate)
+    end
+  end
+  if clearSpells then
+    for nameplate, guid in pairs(NameplatesVisible) do
+      if nameplate and guid then
+        addNameplateTestIcons(nameplate, guid)
       end
     end
   end
 end
 
 -- frame = nameplate.UnitFrame
-function NameplateTrinket:detachFromNameplate(frame)
-  NameplatesVisible[frame] = nil
+function NameplateTrinket:detachFromNameplate(nameplate)
+  NameplatesVisible[nameplate] = nil
 
-  if frame.nptTestIconFrame ~= nil then
-    frame.nptTestIconFrame:Hide()
+  if nameplate.nptTestIconFrame ~= nil then
+    nameplate.nptTestIconFrame:Hide()
   end
-  if frame.nptIconFrame ~= nil then
-    frame.nptIconFrame:Hide()
+  if nameplate.nptIconFrame ~= nil then
+    nameplate.nptIconFrame:Hide()
   end
 end
 
 -- frame = nameplate.UnitFrame
-function NameplateTrinket:attachToNameplate(frame)
-  local guid = UnitGUID(frame.unit)
+function NameplateTrinket:attachToNameplate(nameplate, guid)
+  NameplatesVisible[nameplate] = guid
 
-  NameplatesVisible[frame] = guid
-
-  if not Nameplates[frame] then
-    frame.nptIcons = {}
-    frame.nptIconCount = 0
-    Nameplates[frame] = true
+  if not Nameplates[nameplate] then
+    Nameplates[nameplate] = true
   end
 
-  if not frame.rbgdAnchorFrame then
-    local attachmentFrame = GetHealthbarFrame(frame)
-    frame.rbgdAnchorFrame = CreateFrame("Frame", nil, attachmentFrame)
+  if nameplate.nptTestIconFrame ~= nil then
+    nameplate.nptTestIconFrame:Show()
+  end
+  if nameplate.nptIconFrame ~= nil then
+    nameplate.nptIconFrame:Show()
   end
 
-  if frame.nptTestIconFrame ~= nil then
-    frame.nptTestIconFrame:Show()
-  end
-  if frame.nptIconFrame ~= nil then
-    frame.nptIconFrame:Show()
-  end
-
-  if guid then
-    addNameplateIcons(frame, guid)
-    if NS.db.global.test or NameplateTrinketFrame.TestModeActive then
-      addNameplateTestIcons(frame, guid)
+  if not nameplate.rbgdAnchorFrame then
+    local attachmentFrame = GetHealthbarFrame(nameplate)
+    if attachmentFrame then
+      nameplate.rbgdAnchorFrame = CreateFrame("Frame", nil, attachmentFrame)
     end
+  end
+
+  addNameplateIcons(nameplate, guid)
+  if NS.db.global.test and not IsInInstance() then
+    addNameplateTestIcons(nameplate, guid)
   end
 end
 
@@ -1273,11 +1271,10 @@ function NameplateTrinket:NAME_PLATE_UNIT_REMOVED(unitToken)
     return
   end
 
-  local nameplate = GetSecureNameplate(unitToken)
-  local frame = GetSafeNameplateFrame(nameplate)
+  local nameplate = GetNamePlateForUnit(unitToken, issecure())
 
-  if frame then
-    self:detachFromNameplate(frame)
+  if nameplate then
+    self:detachFromNameplate(nameplate)
   end
 end
 
@@ -1288,18 +1285,17 @@ function NameplateTrinket:NAME_PLATE_UNIT_ADDED(unitToken)
     return
   end
 
-  local nameplate = GetSecureNameplate(unitToken)
-  local frame = GetSafeNameplateFrame(nameplate)
+  local nameplate = GetNamePlateForUnit(unitToken, issecure())
+  local guid = UnitGUID(unitToken)
 
-  if frame then
-    self:detachFromNameplate(frame)
-    self:attachToNameplate(frame)
+  if nameplate and guid then
+    self:attachToNameplate(nameplate, guid)
   end
 end
 
 function NameplateTrinket:PLAYER_TARGET_CHANGED()
   ReallocateIcons(true)
-  if NS.db.global.test then
+  if NS.db.global.test and not IsInInstance() then
     ReallocateTestIcons(true)
   end
 end
@@ -1323,6 +1319,10 @@ end
 15. auraType: string
 --]]
 function NameplateTrinket:COMBAT_LOG_EVENT_UNFILTERED()
+  local hideDuringTestMode = NS.db.global.test and not IsInInstance()
+  if hideDuringTestMode then
+    return
+  end
   local hideInstanceTypes = not NS.db.global.showEverywhere and NS.INSTANCE_TYPES[NameplateTrinketFrame.instanceType]
   if hideInstanceTypes then
     return
@@ -1334,7 +1334,7 @@ function NameplateTrinket:COMBAT_LOG_EVENT_UNFILTERED()
   -- @TODO: don't want to deal with Mind Controlled players right now since they become pets
   -- local isPlayer = bband(sourceFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0
   -- if not isPlayer then
-  -- 	return
+  --   return
   -- end
   local spellId = select(12, CombatLogGetCurrentEventInfo())
   if spellId then
@@ -1344,16 +1344,20 @@ function NameplateTrinket:COMBAT_LOG_EVENT_UNFILTERED()
       end
     end
     if bband(sourceFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) ~= 0 or (NS.db.global.showOnAllies == true) then
-      local currentTime = GetTime()
       local entry = NS.db.global.SpellCDs[spellId]
       local cooldown = AllCooldowns[spellId]
       if cooldown ~= nil and entry and entry.enabled then
+        local trackTrinketOnly = NS.db.global.trinketOnly and not Trinkets[spellId]
+        if trackTrinketOnly then
+          return
+        end
         if
           subevent == "SPELL_CAST_SUCCESS"
           or subevent == "SPELL_AURA_APPLIED"
           or subevent == "SPELL_MISSED"
           or subevent == "SPELL_SUMMON"
         then
+          local currentTime = GetTime()
           local expires = currentTime + cooldown
           if not SpellsPerPlayerGUID[sourceGUID] then
             SpellsPerPlayerGUID[sourceGUID] = {}
@@ -1390,9 +1394,9 @@ function NameplateTrinket:COMBAT_LOG_EVENT_UNFILTERED()
               existingEntry.duration = existingEntry.duration - 30
             end
           end
-          for frame, guid in pairs(NameplatesVisible) do
-            if frame and guid and guid == sourceGUID then
-              addNameplateIcons(frame, guid)
+          for nameplate, guid in pairs(NameplatesVisible) do
+            if nameplate and guid and guid == sourceGUID then
+              addNameplateIcons(nameplate, guid)
               break
             end
           end
@@ -1402,9 +1406,9 @@ function NameplateTrinket:COMBAT_LOG_EVENT_UNFILTERED()
       if subevent == "SPELL_AURA_APPLIED" and spellId == SPELL_RESET then
         if SpellsPerPlayerGUID[sourceGUID] then
           SpellsPerPlayerGUID[sourceGUID] = {}
-          for frame, guid in pairs(NameplatesVisible) do
-            if frame and guid and guid == sourceGUID then
-              addNameplateIcons(frame, guid)
+          for nameplate, guid in pairs(NameplatesVisible) do
+            if nameplate and guid and guid == sourceGUID then
+              addNameplateIcons(nameplate, guid)
             end
           end
         end
@@ -1511,20 +1515,25 @@ end
 
 local function instanceCheck()
   local inInstance, instanceType = IsInInstance()
-  NameplateTrinketFrame.inArena = inInstance and (instanceType == "arena")
-
-  local correctedInstanceType = instanceType == nil and "unknown" or instanceType
 
   if instanceType == nil or instanceType == "unknown" then
     print("report this to the addon author: instanceType is: ", instanceType == nil and "nil" or "unknown")
   end
+
+  local correctedInstanceType = instanceType == nil and "unknown" or instanceType
+
+  NameplateTrinketFrame.inArena = inInstance and (correctedInstanceType == "arena")
 
   if correctedInstanceType ~= NameplateTrinketFrame.instanceType then
     NameplateTrinketFrame.instanceType = correctedInstanceType
 
     ReallocateIcons(false)
     if NS.db.global.test then
-      ReallocateTestIcons(false)
+      if correctedInstanceType == "none" then
+        ReallocateTestIcons(false)
+      elseif TestFrame then
+        NS.DisableTestMode()
+      end
     end
   end
 end
@@ -1533,7 +1542,7 @@ function NameplateTrinket:LOADING_SCREEN_DISABLED()
   After(2, function()
     NameplateTrinketFrame.wasOnLoadingScreen = false
 
-    if NS.db.global.test then
+    if NS.db.global.test and not IsInInstance() then
       NS.EnableTestMode()
     end
   end)
@@ -1574,39 +1583,39 @@ function NameplateTrinket:PLAYER_ENTERING_WORLD()
   end
 
   -- this code only runs when you hover over a player
-  local function OnTooltipSetItem(tooltip, tooltipData)
-    if tooltip == GameTooltip then
-      if tooltipData then
-        if
-          tooltipData.guid
-          and tooltipData.lines
-          and #tooltipData.lines >= 3
-          and tooltipData.type == Enum.TooltipDataType.Unit
-        then
-          if GUIDIsPlayer(tooltipData.guid) then
-            for _, line in ipairs(tooltipData.lines) do
-              if line and line.type == Enum.TooltipDataLineType.None then
-                if line.leftText and line.leftText ~= "" then
-                  if Healers[tooltipData.guid] and HEALER_SPECS[line.leftText] then
-                    break
-                  end
-                  if Healers[tooltipData.guid] and not HEALER_SPECS[line.leftText] then
-                    Healers[tooltipData.guid] = nil
-                    break
-                  end
-                  if not Healers[tooltipData.guid] and HEALER_SPECS[line.leftText] then
-                    Healers[tooltipData.guid] = true
-                    break
-                  end
-                end
-              end
-            end
-          end
-        end
-      end
-    end
-  end
-  TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, OnTooltipSetItem)
+  -- local function OnTooltipSetItem(tooltip, tooltipData)
+  --   if tooltip == GameTooltip then
+  --     if tooltipData then
+  --       if
+  --         tooltipData.guid
+  --         and tooltipData.lines
+  --         and #tooltipData.lines >= 3
+  --         and tooltipData.type == Enum.TooltipDataType.Unit
+  --       then
+  --         if GUIDIsPlayer(tooltipData.guid) then
+  --           for _, line in ipairs(tooltipData.lines) do
+  --             if line and line.type == Enum.TooltipDataLineType.None then
+  --               if line.leftText and line.leftText ~= "" then
+  --                 if Healers[tooltipData.guid] and HEALER_SPECS[line.leftText] then
+  --                   break
+  --                 end
+  --                 if Healers[tooltipData.guid] and not HEALER_SPECS[line.leftText] then
+  --                   Healers[tooltipData.guid] = nil
+  --                   break
+  --                 end
+  --                 if not Healers[tooltipData.guid] and HEALER_SPECS[line.leftText] then
+  --                   Healers[tooltipData.guid] = true
+  --                   break
+  --                 end
+  --               end
+  --             end
+  --           end
+  --         end
+  --       end
+  --     end
+  --   end
+  -- end
+  -- TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, OnTooltipSetItem)
 
   NS.INSTANCE_TYPES = {
     -- nil resolves to "unknown"
@@ -1621,19 +1630,22 @@ function NameplateTrinket:PLAYER_ENTERING_WORLD()
 
   instanceCheck()
 
+  twipe(TestSpellsPerPlayerGUID)
+  twipe(SpellsPerPlayerGUID)
+
   if not NameplateTrinketFrame.loaded then
     NameplateTrinketFrame.loaded = true
 
     local timeElapsed = 0
     if not EventFrame then
-      EventFrame = CreateFrame("frame")
+      EventFrame = CreateFrame("Frame")
     end
     EventFrame:SetScript("OnUpdate", function(_, elapsed)
       timeElapsed = timeElapsed + elapsed
       if timeElapsed >= 1 then
-        for frame, guid in pairs(NameplatesVisible) do
-          if frame and guid then
-            addNameplateIcons(frame, guid)
+        for nameplate, guid in pairs(NameplatesVisible) do
+          if nameplate and guid then
+            addNameplateIcons(nameplate, guid)
           end
         end
         timeElapsed = 0
@@ -1650,9 +1662,6 @@ function NameplateTrinket:PLAYER_ENTERING_WORLD()
       NameplateTrinketFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
     end
   end
-
-  twipe(TestSpellsPerPlayerGUID)
-  twipe(SpellsPerPlayerGUID)
 end
 
 function NameplateTrinket:PLAYER_LOGIN()
@@ -1686,7 +1695,7 @@ function NS.OnDbChanged()
   }
 
   ReallocateIcons(true)
-  if NS.db.global.test then
+  if NS.db.global.test and not IsInInstance() then
     ReallocateTestIcons(true)
   end
 end
