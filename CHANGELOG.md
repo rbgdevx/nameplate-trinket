@@ -1,5 +1,21 @@
 # Nameplate Trinket
 
+## [v2.1.3](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.3) (2024-11-27)
+
+- Added all new Spells tab! This allows you to see and control all the spells being tracked
+  - You can add a new spell by Spell ID or Spell Name and it will ensure if its valid or not for you
+  - Provides settings you can override for each spell including
+    - The ability to enable or disable the spell
+    - Spell ID
+    - Cooldown
+    - Spell Icon ID
+    - And the ability to remove the spell
+- Adding a sort dropdown so you can control the sorting of the icons displayed
+- Updating default config settings
+- Removing old unused code
+- Updating variable names
+- Updating database initialization utility functions
+
 ## [v2.1.2](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.2) (2024-11-21)
 
 - fixing incorrect logic when checking for valid instance types

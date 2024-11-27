@@ -21,6 +21,8 @@ local LibStub = LibStub
 local next = next
 local CombatLogGetCurrentEventInfo = CombatLogGetCurrentEventInfo
 local select = select
+local tostring = tostring
+local tonumber = tonumber
 
 local mceil = math.ceil
 local mmax = math.max
@@ -33,16 +35,20 @@ local bband = bit.band
 local GetNamePlateForUnit = C_NamePlate.GetNamePlateForUnit
 local GetNamePlates = C_NamePlate.GetNamePlates
 local After = C_Timer.After
+local IsAddOnLoaded = C_AddOns.IsAddOnLoaded
+local GetSpellInfo = C_Spell.GetSpellInfo
+local GetSpellDescription = C_Spell.GetSpellDescription
 -- local GetUnitTooltip = C_TooltipInfo.GetUnit
 -- local GUIDIsPlayer = C_PlayerInfo.GUIDIsPlayer
 
 local SpellTextureByID = NS.SpellTextureByID
-local SpellNameByID = NS.SpellNameByID
 local Interrupts = NS.Interrupts
 local Trinkets = NS.Trinkets
 
 local NameplateTrinket = {}
 NS.NameplateTrinket = NameplateTrinket
+
+AllCooldowns = NS.AllCooldowns
 
 local NameplateTrinketFrame = CreateFrame("Frame", AddonName .. "Frame")
 NameplateTrinketFrame:SetScript("OnEvent", function(_, event, ...)
@@ -55,6 +61,7 @@ NameplateTrinketFrame.wasOnLoadingScreen = true
 NameplateTrinketFrame.instanceType = nil
 NameplateTrinketFrame.inArena = false
 NameplateTrinketFrame.loaded = false
+NameplateTrinketFrame.dbChanged = false
 NS.NameplateTrinket.frame = NameplateTrinketFrame
 
 -- local COMBATLOG_OBJECT_TYPE_PLAYER = COMBATLOG_OBJECT_TYPE_PLAYER
@@ -62,12 +69,13 @@ local COMBATLOG_OBJECT_REACTION_HOSTILE = COMBATLOG_OBJECT_REACTION_HOSTILE
 local SPELL_PVPTRINKET = NS.SPELL_PVPTRINKET
 local SPELL_PVPADAPTATION = NS.SPELL_PVPADAPTATION
 local SPELL_RESET = NS.SPELL_RESET
+local ICON_GROW_DIRECTION_LEFT = NS.ICON_GROW_DIRECTION_LEFT
+local ICON_GROW_DIRECTION_RIGHT = NS.ICON_GROW_DIRECTION_RIGHT
 local SORT_MODE_NONE = NS.SORT_MODE_NONE
 local SORT_MODE_TRINKET_INTERRUPT_OTHER = NS.SORT_MODE_TRINKET_INTERRUPT_OTHER
 local SORT_MODE_INTERRUPT_TRINKET_OTHER = NS.SORT_MODE_INTERRUPT_TRINKET_OTHER
 local SORT_MODE_TRINKET_OTHER = NS.SORT_MODE_TRINKET_OTHER
 local SORT_MODE_INTERRUPT_OTHER = NS.SORT_MODE_INTERRUPT_OTHER
-local GLOW_TIME_INFINITE = NS.GLOW_TIME_INFINITE
 local MinCdDuration = 0
 local MaxCdDuration = 10 * 3600
 local ShowCooldownAnimation = true
@@ -83,8 +91,6 @@ local spellIDs = {
 }
 local SpellsPerPlayerGUID = {}
 local TestSpellsPerPlayerGUID = {}
-local AllCooldowns = {}
-NS.AllCooldowns = AllCooldowns
 local Nameplates = {}
 local NameplatesVisible = {}
 local Healers = {}
@@ -184,7 +190,7 @@ local function GetSafeNameplateFrame(nameplate)
   return frame
 end
 
-local function GetHealthbarFrame(nameplate)
+local function GetHealthBarFrame(nameplate)
   local frame = GetSafeNameplateFrame(nameplate)
   if frame then
     if frame.HealthBarsContainer then
@@ -196,106 +202,71 @@ local function GetHealthbarFrame(nameplate)
   return nil
 end
 
-function NS.GetDefaultDBEntryForSpell()
-  return {
-    ["enabled"] = true,
-    ["glow"] = nil,
-  }
-end
-
-function NS.BuildCooldowns()
-  twipe(AllCooldowns)
-
-  for _, cds in pairs(NS.CDs) do
-    for spellId, cd in pairs(cds) do
-      if SpellNameByID[spellId] ~= nil then
-        AllCooldowns[spellId] = cd
-        if NS.db.global.SpellCDs[spellId] == nil then
-          NS.db.global.SpellCDs[spellId] = NS.GetDefaultDBEntryForSpell()
-        end
-      end
-    end
-  end
-
-  for spellID in pairs(AllCooldowns) do
-    if NS.db.global.SpellCDs[spellID] ~= nil and NS.db.global.SpellCDs[spellID].customCD ~= nil then
-      AllCooldowns[spellID] = NS.db.global.SpellCDs[spellID].customCD
-    end
-  end
-
-  -- delete invalid spells
-  for spellId in pairs(NS.db.global.SpellCDs) do
-    if SpellNameByID[spellId] == nil then
-      NS.db.global.SpellCDs[spellId] = nil
-    end
-  end
-end
-
 local CDSortFunctions = {
   [SORT_MODE_NONE] = function() end,
   [SORT_MODE_TRINKET_INTERRUPT_OTHER] = function(item1, item2)
-    if Trinkets[item1.spellID] then
-      if Trinkets[item2.spellID] then
+    if Trinkets[item1.spellId] then
+      if Trinkets[item2.spellId] then
         return item1.expires < item2.expires
       else
         return true
       end
-    elseif Trinkets[item2.spellID] then
+    elseif Trinkets[item2.spellId] then
       return false
-    elseif Interrupts[item1.spellID] then
-      if Interrupts[item2.spellID] then
+    elseif Interrupts[item1.spellId] then
+      if Interrupts[item2.spellId] then
         return item1.expires < item2.expires
       else
         return true
       end
-    elseif Interrupts[item2.spellID] then
+    elseif Interrupts[item2.spellId] then
       return false
     else
       return item1.expires < item2.expires
     end
   end,
   [SORT_MODE_INTERRUPT_TRINKET_OTHER] = function(item1, item2)
-    if Interrupts[item1.spellID] then
-      if Interrupts[item2.spellID] then
+    if Interrupts[item1.spellId] then
+      if Interrupts[item2.spellId] then
         return item1.expires < item2.expires
       else
         return true
       end
-    elseif Interrupts[item2.spellID] then
+    elseif Interrupts[item2.spellId] then
       return false
-    elseif Trinkets[item1.spellID] then
-      if Trinkets[item2.spellID] then
+    elseif Trinkets[item1.spellId] then
+      if Trinkets[item2.spellId] then
         return item1.expires < item2.expires
       else
         return true
       end
-    elseif Trinkets[item2.spellID] then
+    elseif Trinkets[item2.spellId] then
       return false
     else
       return item1.expires < item2.expires
     end
   end,
   [SORT_MODE_TRINKET_OTHER] = function(item1, item2)
-    if Trinkets[item1.spellID] then
-      if Trinkets[item2.spellID] then
+    if Trinkets[item1.spellId] then
+      if Trinkets[item2.spellId] then
         return item1.expires < item2.expires
       else
         return true
       end
-    elseif Trinkets[item2.spellID] then
+    elseif Trinkets[item2.spellId] then
       return false
     else
       return item1.expires < item2.expires
     end
   end,
   [SORT_MODE_INTERRUPT_OTHER] = function(item1, item2)
-    if Interrupts[item1.spellID] then
-      if Interrupts[item2.spellID] then
+    if Interrupts[item1.spellId] then
+      if Interrupts[item2.spellId] then
         return item1.expires < item2.expires
       else
         return true
       end
-    elseif Interrupts[item2.spellID] then
+    elseif Interrupts[item2.spellId] then
       return false
     else
       return item1.expires < item2.expires
@@ -310,7 +281,7 @@ local function SortAuras(cds)
       t[#t + 1] = spellInfo
     end
   end
-  tsort(t, CDSortFunctions["trinket-other"])
+  tsort(t, CDSortFunctions[NS.db.global.sortOrder])
   return t
 end
 
@@ -384,7 +355,7 @@ function ShowIcon(icon, nameplate)
   if icon.cooldownText then
     icon.cooldownText:Show()
   end
-  local hideIcon = NS.db.global.trinketOnly and not Trinkets[icon.spellID]
+  local hideIcon = NS.db.global.trinketOnly and not Trinkets[icon.spellId]
   if hideIcon then
     icon.frame:Hide()
     icon.shown = false
@@ -399,7 +370,7 @@ function ShowTestIcon(icon, nameplate)
   if icon.cooldownText then
     icon.cooldownText:Show()
   end
-  local hideIcon = NS.db.global.trinketOnly and not Trinkets[icon.spellID]
+  local hideIcon = NS.db.global.trinketOnly and not Trinkets[icon.spellId]
   if hideIcon then
     icon.frame:Hide()
     icon.shown = false
@@ -410,7 +381,7 @@ function ShowTestIcon(icon, nameplate)
   SetTestFrameSize(nameplate)
 end
 
-local function SetGlow(icon, spellID, isActive)
+local function SetGlow(icon, spellId, isActive)
   local offsetMultiplier = 0.41
   local widthOffset = NS.db.global.iconSize * offsetMultiplier
   local heightOffset = NS.db.global.iconSize * offsetMultiplier
@@ -425,7 +396,7 @@ local function SetGlow(icon, spellID, isActive)
     icon.glowTexture:SetPoint("BOTTOMRIGHT", icon.frame, "BOTTOMRIGHT", widthOffset, -heightOffset)
   end
 
-  if isActive and Trinkets[spellID] then
+  if isActive and Trinkets[spellId] then
     icon.glowTexture:Show()
     icon.glow = true
   elseif icon.glowTexture ~= nil then
@@ -435,8 +406,8 @@ local function SetGlow(icon, spellID, isActive)
   end
 end
 
-local function SetBorder(icon, spellID, isActive)
-  if isActive and Trinkets[spellID] then
+local function SetBorder(icon, spellId, isActive)
+  if isActive and Trinkets[spellId] then
     if icon.borderState ~= 2 then
       icon.border:SetVertexColor(1, 0.843, 0, 1)
       icon.border:Show()
@@ -449,9 +420,10 @@ local function SetBorder(icon, spellID, isActive)
 end
 
 local function SetTexture(icon, texture, isActive)
-  if icon.textureID ~= texture then
-    icon.texture:SetTexture(texture)
-    icon.textureID = texture
+  local correctTexture = texture == nil and 134400 or texture
+  if icon.textureID ~= correctTexture then
+    icon.texture:SetTexture(correctTexture)
+    icon.textureID = correctTexture
   end
   if icon.desaturation ~= not isActive then
     icon.texture:SetDesaturated(not isActive)
@@ -463,16 +435,16 @@ local function PlaceIcon(nameplate, icon, iconIndex)
   icon.frame:ClearAllPoints()
   local index = iconIndex == nil and nameplate.nptIconCount or (iconIndex - 1)
   if index == 0 then
-    if NS.db.global.growDirection == "RIGHT" then
+    if NS.db.global.growDirection == ICON_GROW_DIRECTION_RIGHT then
       icon.frame:SetPoint("LEFT", nameplate.nptIconFrame, "LEFT", 0, 0)
-    elseif NS.db.global.growDirection == "LEFT" then
+    elseif NS.db.global.growDirection == ICON_GROW_DIRECTION_LEFT then
       icon.frame:SetPoint("RIGHT", nameplate.nptIconFrame, "RIGHT", 0, 0)
     end
   else
     local previousIcon = nameplate.nptIcons[index]
-    if NS.db.global.growDirection == "RIGHT" then
+    if NS.db.global.growDirection == ICON_GROW_DIRECTION_RIGHT then
       icon.frame:SetPoint("LEFT", previousIcon.frame, "RIGHT", NS.db.global.iconSpacing, 0)
-    elseif NS.db.global.growDirection == "LEFT" then
+    elseif NS.db.global.growDirection == ICON_GROW_DIRECTION_LEFT then
       icon.frame:SetPoint("RIGHT", previousIcon.frame, "LEFT", -NS.db.global.iconSpacing, 0)
     end
   end
@@ -482,16 +454,16 @@ local function PlaceTestIcon(nameplate, icon, iconIndex)
   icon.frame:ClearAllPoints()
   local index = iconIndex == nil and nameplate.nptTestIconCount or (iconIndex - 1)
   if index == 0 then
-    if NS.db.global.growDirection == "RIGHT" then
+    if NS.db.global.growDirection == ICON_GROW_DIRECTION_RIGHT then
       icon.frame:SetPoint("LEFT", nameplate.nptTestIconFrame, "LEFT", 0, 0)
-    elseif NS.db.global.growDirection == "LEFT" then
+    elseif NS.db.global.growDirection == ICON_GROW_DIRECTION_LEFT then
       icon.frame:SetPoint("RIGHT", nameplate.nptTestIconFrame, "RIGHT", 0, 0)
     end
   else
     local previousIcon = nameplate.nptTestIcons[index]
-    if NS.db.global.growDirection == "RIGHT" then
+    if NS.db.global.growDirection == ICON_GROW_DIRECTION_RIGHT then
       icon.frame:SetPoint("LEFT", previousIcon.frame, "RIGHT", NS.db.global.iconSpacing, 0)
-    elseif NS.db.global.growDirection == "LEFT" then
+    elseif NS.db.global.growDirection == ICON_GROW_DIRECTION_LEFT then
       icon.frame:SetPoint("RIGHT", previousIcon.frame, "LEFT", -NS.db.global.iconSpacing, 0)
     end
   end
@@ -562,11 +534,11 @@ local function SetTestCooldown(icon, remainingTime, started, cooldownLength, isA
 end
 
 -- frame = nameplate.UnitFrame
-function CreateIcon(nameplate, spellID, index)
+function CreateIcon(nameplate, spellId, index)
   local iconFrame =
-    CreateFrame("Frame", AddonName .. "IconFrame" .. "Spell" .. spellID .. "Index" .. index, nameplate.nptIconFrame)
+    CreateFrame("Frame", AddonName .. "IconFrame" .. "Spell" .. spellId .. "Index" .. index, nameplate.nptIconFrame)
   local icon = {}
-  icon.spellID = spellID
+  icon.spellId = spellId
 
   iconFrame:SetWidth(NS.db.global.iconSize)
   iconFrame:SetHeight(NS.db.global.iconSize)
@@ -589,7 +561,7 @@ function CreateIcon(nameplate, spellID, index)
   icon.border:SetVertexColor(1, 0.35, 0)
   icon.border:Hide()
 
-  local loadedOrLoading, loaded = C_AddOns.IsAddOnLoaded("OmniCC")
+  local loadedOrLoading, loaded = IsAddOnLoaded("OmniCC")
   if not loaded and not loadedOrLoading then
     icon.cooldownFrame:SetHideCountdownNumbers(true)
 
@@ -611,19 +583,17 @@ function CreateIcon(nameplate, spellID, index)
 
   nameplate.nptIconCount = nameplate.nptIconCount + 1
   tinsert(nameplate.nptIcons, icon)
-
-  return icon
 end
 
 -- frame = nameplate.UnitFrame
-function CreateTestIcon(nameplate, spellID, index)
+function CreateTestIcon(nameplate, spellId, index)
   local iconFrame = CreateFrame(
     "Frame",
-    AddonName .. "TestIconFrame" .. "Spell" .. spellID .. "Index" .. index,
+    AddonName .. "TestIconFrame" .. "Spell" .. spellId .. "Index" .. index,
     nameplate.nptTestIconFrame
   )
   local icon = {}
-  icon.spellID = spellID
+  icon.spellId = spellId
 
   iconFrame:SetWidth(NS.db.global.iconSize)
   iconFrame:SetHeight(NS.db.global.iconSize)
@@ -646,7 +616,7 @@ function CreateTestIcon(nameplate, spellID, index)
   icon.border:SetVertexColor(1, 0.35, 0)
   icon.border:Hide()
 
-  local loadedOrLoading, loaded = C_AddOns.IsAddOnLoaded("OmniCC")
+  local loadedOrLoading, loaded = IsAddOnLoaded("OmniCC")
   if not loaded and not loadedOrLoading then
     icon.cooldownFrame:SetHideCountdownNumbers(true)
 
@@ -668,8 +638,6 @@ function CreateTestIcon(nameplate, spellID, index)
 
   nameplate.nptTestIconCount = nameplate.nptTestIconCount + 1
   tinsert(nameplate.nptTestIcons, icon)
-
-  return icon
 end
 
 local function FilterSpell(dbInfo, remainingTime, isActive)
@@ -678,6 +646,10 @@ local function FilterSpell(dbInfo, remainingTime, isActive)
   end
 
   if not ShowInactiveCd and not isActive then
+    return false
+  end
+
+  if tonumber(dbInfo.cooldown) <= 0 then
     return false
   end
 
@@ -698,23 +670,22 @@ local function addIcons(nameplate, guid)
     local currentTime = GetTime()
     local sortedCDs = SortAuras(SpellsPerPlayerGUID[guid])
     for index, spellInfo in pairs(sortedCDs) do
-      local spellID = spellInfo.spellID
+      local spellId = spellInfo.spellId
       local isActive = spellInfo.expires > currentTime
       if InverseLogic then
         isActive = not isActive
       end
-      local dbInfo = NS.db.global.SpellCDs[spellID]
+      local dbInfo = NS.db.spells[tostring(spellId)]
       local remainingTime = spellInfo.expires - currentTime
       if FilterSpell(dbInfo, remainingTime, isActive) then
         if counter > nameplate.nptIconCount then
-          CreateIcon(nameplate, spellID, index)
+          CreateIcon(nameplate, spellId, index)
         end
         local icon = nameplate.nptIcons[counter]
         SetTexture(icon, spellInfo.texture, isActive)
-        SetBorder(icon, spellID, isActive)
-        if NS.db.global.enableGlow and Trinkets[spellID] then
-          dbInfo.glow = GLOW_TIME_INFINITE
-          SetGlow(icon, spellID, isActive)
+        SetBorder(icon, spellId, isActive)
+        if NS.db.global.enableGlow and Trinkets[spellId] then
+          SetGlow(icon, spellId, isActive)
         end
         SetCooldown(icon, remainingTime, spellInfo.started, spellInfo.duration, isActive)
         if not icon.shown then
@@ -743,23 +714,47 @@ local function addTestIcons(nameplate, guid)
     local currentTime = GetTime()
     local sortedCDs = SortAuras(TestSpellsPerPlayerGUID[guid])
     for index, spellInfo in ipairs(sortedCDs) do
-      local spellID = spellInfo.spellID
+      local spellId = spellInfo.spellId
       local isActive = spellInfo.expires > currentTime
       if InverseLogic then
         isActive = not isActive
       end
-      local dbInfo = NS.db.global.SpellCDs[spellID]
+      local dbInfo = NS.db.spells[tostring(spellId)]
+      -- We create a copy of dbInfo to avoid modifying the users settings just for testing
+      local dbInfoCopy
+      if not dbInfo then
+        local fallBackInfo = GetSpellInfo(spellId)
+        local spellDescription = GetSpellDescription(spellId)
+        if fallBackInfo then
+          dbInfoCopy = {
+            cooldown = AllCooldowns[fallBackInfo.spellID],
+            enabled = true,
+            spellId = fallBackInfo.spellID,
+            spellIcon = fallBackInfo.iconID,
+            spellName = fallBackInfo.name,
+            spellDescription = spellDescription or "",
+          }
+        end
+      else
+        dbInfoCopy = {
+          cooldown = dbInfo.cooldown,
+          enabled = true,
+          spellId = dbInfo.spellId,
+          spellIcon = dbInfo.spellIcon,
+          spellName = dbInfo.spellName,
+          spellDescription = dbInfo.spellDescription,
+        }
+      end
       local remainingTime = spellInfo.expires - currentTime
-      if FilterSpell(dbInfo, remainingTime, isActive) then
+      if FilterSpell(dbInfoCopy, remainingTime, isActive) then
         if counter > nameplate.nptTestIconCount then
-          CreateTestIcon(nameplate, spellID, index)
+          CreateTestIcon(nameplate, spellId, index)
         end
         local icon = nameplate.nptTestIcons[counter]
         SetTexture(icon, spellInfo.texture, isActive)
-        SetBorder(icon, spellID, isActive)
-        if NS.db.global.enableGlow and Trinkets[spellID] then
-          dbInfo.glow = GLOW_TIME_INFINITE
-          SetGlow(icon, spellID, isActive)
+        SetBorder(icon, spellId, isActive)
+        if NS.db.global.enableGlow and Trinkets[spellId] then
+          SetGlow(icon, spellId, isActive)
         end
         SetTestCooldown(icon, remainingTime, spellInfo.started, spellInfo.duration, isActive)
         if not icon.shown then
@@ -784,41 +779,6 @@ local function addNameplateIcons(nameplate, guid)
   end
 
   local unit = nameplate.namePlateUnitToken
-
-  -- if not nameplate.healerChecked then
-  --   nameplate.healerChecked = true
-  --   local tooltipData = GetUnitTooltip(unit)
-  --   if tooltipData then
-  --     if
-  --       tooltipData.guid
-  --       and tooltipData.lines
-  --       and #tooltipData.lines >= 3
-  --       and tooltipData.type == Enum.TooltipDataType.Unit
-  --     then
-  --       if GUIDIsPlayer(tooltipData.guid) then
-  --         if not Healers[tooltipData.guid] then
-  --           for _, line in ipairs(tooltipData.lines) do
-  --             if line and line.type == Enum.TooltipDataLineType.None then
-  --               if line.leftText and line.leftText ~= "" then
-  --                 if Healers[tooltipData.guid] and HEALER_SPECS[line.leftText] then
-  --                   break
-  --                 end
-  --                 if Healers[tooltipData.guid] and not HEALER_SPECS[line.leftText] then
-  --                   Healers[tooltipData.guid] = nil
-  --                   break
-  --                 end
-  --                 if not Healers[tooltipData.guid] and HEALER_SPECS[line.leftText] then
-  --                   Healers[tooltipData.guid] = true
-  --                   break
-  --                 end
-  --               end
-  --             end
-  --           end
-  --         end
-  --       end
-  --     end
-  --   end
-  -- end
 
   --[[
   -- local r = UnitReaction("player", unit)
@@ -885,12 +845,32 @@ local function addNameplateIcons(nameplate, guid)
       NS.db.global.offsetY
     )
     nameplate.nptIconFrame:SetScale(1)
-    nameplate.nptIconFrame:Show()
     nameplate.nptIcons = {}
     nameplate.nptIconCount = 0
   end
 
+  if NameplateTrinketFrame.dbChanged then
+    nameplate.nptIconFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
+    nameplate.nptIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
+    nameplate.nptIconFrame:SetWidth(NS.db.global.iconSize)
+    nameplate.nptIconFrame:SetHeight(NS.db.global.iconSize)
+    nameplate.nptIconFrame:SetFrameStrata(NS.db.global.frameStrata)
+    nameplate.nptIconFrame:ClearAllPoints()
+    local frame = GetSafeNameplateFrame(nameplate)
+    local anchorFrame = frame and frame.healthBar or nameplate
+    -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
+    nameplate.nptIconFrame:SetPoint(
+      NS.db.global.anchor,
+      anchorFrame,
+      NS.db.global.anchorTo,
+      NS.db.global.offsetX,
+      NS.db.global.offsetY
+    )
+  end
+
   addIcons(nameplate, guid)
+
+  nameplate.nptIconFrame:Show()
 end
 NS.addNameplateIcons = addNameplateIcons
 
@@ -900,41 +880,6 @@ local function addNameplateTestIcons(nameplate, guid)
   end
 
   local unit = nameplate.namePlateUnitToken
-
-  -- if not nameplate.healerChecked then
-  --   nameplate.healerChecked = true
-  --   local tooltipData = GetUnitTooltip(unit)
-  --   if tooltipData then
-  --     if
-  --       tooltipData.guid
-  --       and tooltipData.lines
-  --       and #tooltipData.lines >= 3
-  --       and tooltipData.type == Enum.TooltipDataType.Unit
-  --     then
-  --       if GUIDIsPlayer(tooltipData.guid) then
-  --         if not Healers[tooltipData.guid] then
-  --           for _, line in ipairs(tooltipData.lines) do
-  --             if line and line.type == Enum.TooltipDataLineType.None then
-  --               if line.leftText and line.leftText ~= "" then
-  --                 if Healers[tooltipData.guid] and HEALER_SPECS[line.leftText] then
-  --                   break
-  --                 end
-  --                 if Healers[tooltipData.guid] and not HEALER_SPECS[line.leftText] then
-  --                   Healers[tooltipData.guid] = nil
-  --                   break
-  --                 end
-  --                 if not Healers[tooltipData.guid] and HEALER_SPECS[line.leftText] then
-  --                   Healers[tooltipData.guid] = true
-  --                   break
-  --                 end
-  --               end
-  --             end
-  --           end
-  --         end
-  --       end
-  --     end
-  --   end
-  -- end
 
   --[[
   -- local r = UnitReaction("player", unit)
@@ -1001,12 +946,31 @@ local function addNameplateTestIcons(nameplate, guid)
       NS.db.global.offsetX,
       NS.db.global.offsetY
     )
-    nameplate.nptTestIconFrame:Show()
     nameplate.nptTestIcons = {}
     nameplate.nptTestIconCount = 0
   end
 
+  if NameplateTrinketFrame.dbChanged then
+    nameplate.nptTestIconFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
+    nameplate.nptTestIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
+    nameplate.nptTestIconFrame:SetWidth(NS.db.global.iconSize)
+    nameplate.nptTestIconFrame:SetHeight(NS.db.global.iconSize)
+    nameplate.nptTestIconFrame:SetFrameStrata(NS.db.global.frameStrata)
+    local frame = GetSafeNameplateFrame(nameplate)
+    local anchorFrame = frame and frame.healthBar or nameplate
+    -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
+    nameplate.nptTestIconFrame:SetPoint(
+      NS.db.global.anchor,
+      anchorFrame,
+      NS.db.global.anchorTo,
+      NS.db.global.offsetX,
+      NS.db.global.offsetY
+    )
+  end
+
   addTestIcons(nameplate, guid)
+
+  nameplate.nptTestIconFrame:Show()
 end
 NS.addNameplateTestIcons = addNameplateTestIcons
 
@@ -1035,39 +999,44 @@ function NS.RefreshTestSpells()
       end
       if not TestSpellsPerPlayerGUID[guid][SPELL_PVPTRINKET] then
         TestSpellsPerPlayerGUID[guid][SPELL_PVPTRINKET] = {
-          ["spellID"] = SPELL_PVPTRINKET,
+          ["spellId"] = SPELL_PVPTRINKET,
           ["expires"] = currentTime + (Healers[guid] and 90 or 120),
-          ["texture"] = SpellTextureByID[SPELL_PVPTRINKET],
+          ["texture"] = NS.db.spells[tostring(SPELL_PVPTRINKET)] and NS.db.spells[tostring(SPELL_PVPTRINKET)].spellIcon
+            or SpellTextureByID[SPELL_PVPTRINKET],
           ["duration"] = (Healers[guid] and 90 or 120),
           ["started"] = currentTime,
         }
       else
         if currentTime - TestSpellsPerPlayerGUID[guid][SPELL_PVPTRINKET].expires > 0 then
           TestSpellsPerPlayerGUID[guid][SPELL_PVPTRINKET] = {
-            ["spellID"] = SPELL_PVPTRINKET,
+            ["spellId"] = SPELL_PVPTRINKET,
             ["expires"] = currentTime + (Healers[guid] and 90 or 120),
-            ["texture"] = SpellTextureByID[SPELL_PVPTRINKET],
+            ["texture"] = NS.db.spells[tostring(SPELL_PVPTRINKET)]
+                and NS.db.spells[tostring(SPELL_PVPTRINKET)].spellIcon
+              or SpellTextureByID[SPELL_PVPTRINKET],
             ["duration"] = (Healers[guid] and 90 or 120),
             ["started"] = currentTime,
           }
         end
       end
       if not NS.db.global.trinketOnly then
-        for spellID, cd in pairs(spellIDs) do
-          if not TestSpellsPerPlayerGUID[guid][spellID] then
-            TestSpellsPerPlayerGUID[guid][spellID] = {
-              ["spellID"] = spellID,
+        for spellId, cd in pairs(spellIDs) do
+          if not TestSpellsPerPlayerGUID[guid][spellId] then
+            TestSpellsPerPlayerGUID[guid][spellId] = {
+              ["spellId"] = spellId,
               ["expires"] = currentTime + cd,
-              ["texture"] = SpellTextureByID[spellID],
+              ["texture"] = NS.db.spells[tostring(spellId)] and NS.db.spells[tostring(spellId)].spellIcon
+                or SpellTextureByID[spellId],
               ["duration"] = cd,
               ["started"] = currentTime,
             }
           else
-            if currentTime - TestSpellsPerPlayerGUID[guid][spellID].expires > 0 then
-              TestSpellsPerPlayerGUID[guid][spellID] = {
-                ["spellID"] = spellID,
+            if currentTime - TestSpellsPerPlayerGUID[guid][spellId].expires > 0 then
+              TestSpellsPerPlayerGUID[guid][spellId] = {
+                ["spellId"] = spellId,
                 ["expires"] = currentTime + cd,
-                ["texture"] = SpellTextureByID[spellID],
+                ["texture"] = NS.db.spells[tostring(spellId)] and NS.db.spells[tostring(spellId)].spellIcon
+                  or SpellTextureByID[spellId],
                 ["duration"] = cd,
                 ["started"] = currentTime,
               }
@@ -1255,7 +1224,7 @@ function NameplateTrinket:attachToNameplate(nameplate, guid)
   end
 
   if not nameplate.rbgdAnchorFrame then
-    local attachmentFrame = GetHealthbarFrame(nameplate)
+    local attachmentFrame = GetHealthBarFrame(nameplate)
     if attachmentFrame then
       nameplate.rbgdAnchorFrame = CreateFrame("Frame", nil, attachmentFrame)
     end
@@ -1351,60 +1320,62 @@ function NameplateTrinket:COMBAT_LOG_EVENT_UNFILTERED()
       end
     end
     if bband(sourceFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) ~= 0 or (NS.db.global.showOnAllies == true) then
-      local entry = NS.db.global.SpellCDs[spellId]
-      local cooldown = AllCooldowns[spellId]
-      if cooldown ~= nil and entry and entry.enabled then
-        local trackTrinketOnly = NS.db.global.trinketOnly and not Trinkets[spellId]
-        if trackTrinketOnly then
-          return
-        end
-        if
-          subevent == "SPELL_CAST_SUCCESS"
-          or subevent == "SPELL_AURA_APPLIED"
-          or subevent == "SPELL_MISSED"
-          or subevent == "SPELL_SUMMON"
-        then
-          local currentTime = GetTime()
-          local expires = currentTime + cooldown
-          if not SpellsPerPlayerGUID[sourceGUID] then
-            SpellsPerPlayerGUID[sourceGUID] = {}
+      local entry = NS.db.spells[tostring(spellId)]
+      if entry ~= nil and entry.enabled then
+        local cooldown = tonumber(entry.cooldown)
+        if cooldown ~= nil and cooldown > 0 then
+          local trackTrinketOnly = NS.db.global.trinketOnly and not Trinkets[spellId]
+          if trackTrinketOnly then
+            return
           end
-          SpellsPerPlayerGUID[sourceGUID][spellId] = {
-            ["spellID"] = spellId,
-            ["expires"] = expires,
-            ["texture"] = SpellTextureByID[spellId],
-            ["duration"] = cooldown,
-            ["started"] = currentTime,
-          }
-          -- // pvptier 1/2 used, correcting cd of PvP trinket
           if
-            spellId == SPELL_PVPADAPTATION
-            and NS.db.global.SpellCDs[SPELL_PVPTRINKET] ~= nil
-            and NS.db.global.SpellCDs[SPELL_PVPTRINKET].enabled
+            subevent == "SPELL_CAST_SUCCESS"
+            or subevent == "SPELL_AURA_APPLIED"
+            or subevent == "SPELL_MISSED"
+            or subevent == "SPELL_SUMMON"
           then
-            local existingEntry = SpellsPerPlayerGUID[sourceGUID][SPELL_PVPTRINKET]
-            if existingEntry then
-              existingEntry.expires = currentTime + 60
-              existingEntry.duration = currentTime + 60
-              -- existingEntry.texture = SpellTextureByID[SPELL_PVPTRINKET]
+            local currentTime = GetTime()
+            local expires = currentTime + cooldown
+            local texture = entry.spellIcon
+            if not SpellsPerPlayerGUID[sourceGUID] then
+              SpellsPerPlayerGUID[sourceGUID] = {}
             end
+            SpellsPerPlayerGUID[sourceGUID][spellId] = {
+              ["spellId"] = spellId,
+              ["expires"] = expires,
+              ["texture"] = texture,
+              ["duration"] = cooldown,
+              ["started"] = currentTime,
+            }
+            -- // pvptier 1/2 used, correcting cd of PvP trinket
+            if
+              spellId == SPELL_PVPADAPTATION
+              and NS.db.spells[SPELL_PVPTRINKET] ~= nil
+              and NS.db.spells[SPELL_PVPTRINKET].enabled
+            then
+              local existingEntry = SpellsPerPlayerGUID[sourceGUID][SPELL_PVPTRINKET]
+              if existingEntry then
+                existingEntry.expires = currentTime + 60
+                existingEntry.duration = currentTime + 60
+              end
             -- caster is a healer, reducing cd of pvp trinket
-          elseif
-            spellId == SPELL_PVPTRINKET
-            and NS.db.global.SpellCDs[SPELL_PVPTRINKET] ~= nil
-            and NS.db.global.SpellCDs[SPELL_PVPTRINKET].enabled
-            and Healers[sourceGUID]
-          then
-            local existingEntry = SpellsPerPlayerGUID[sourceGUID][SPELL_PVPTRINKET]
-            if existingEntry then
-              existingEntry.expires = existingEntry.expires - 30
-              existingEntry.duration = existingEntry.duration - 30
+            elseif
+              spellId == SPELL_PVPTRINKET
+              and NS.db.spells[SPELL_PVPTRINKET] ~= nil
+              and NS.db.spells[SPELL_PVPTRINKET].enabled
+              and Healers[sourceGUID]
+            then
+              local existingEntry = SpellsPerPlayerGUID[sourceGUID][SPELL_PVPTRINKET]
+              if existingEntry then
+                existingEntry.expires = existingEntry.expires - 30
+                existingEntry.duration = existingEntry.duration - 30
+              end
             end
-          end
-          for nameplate, guid in pairs(NameplatesVisible) do
-            if nameplate and guid and guid == sourceGUID then
-              addNameplateIcons(nameplate, guid)
-              break
+            for nameplate, guid in pairs(NameplatesVisible) do
+              if nameplate and guid and guid == sourceGUID then
+                addNameplateIcons(nameplate, guid)
+                break
+              end
             end
           end
         end
@@ -1674,8 +1645,6 @@ end
 function NameplateTrinket:PLAYER_LOGIN()
   NameplateTrinketFrame:UnregisterEvent("PLAYER_LOGIN")
 
-  NS.BuildCooldowns()
-
   NameplateTrinketFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
   NameplateTrinketFrame:RegisterEvent("PLAYER_LEAVING_WORLD")
   NameplateTrinketFrame:RegisterEvent("LOADING_SCREEN_ENABLED")
@@ -1684,6 +1653,8 @@ end
 NameplateTrinketFrame:RegisterEvent("PLAYER_LOGIN")
 
 function NS.OnDbChanged()
+  NameplateTrinketFrame.dbChanged = true
+
   if NS.db.global.targetOnly then
     NameplateTrinketFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
   else
@@ -1705,13 +1676,17 @@ function NS.OnDbChanged()
   if NS.db.global.test and not IsInInstance() then
     ReallocateTestIcons(true)
   end
+
+  NameplateTrinketFrame.dbChanged = false
 end
 
-function Options_SlashCommands(_)
+function NS.Options_SlashCommands(_)
   LibStub("AceConfigDialog-3.0"):Open(AddonName)
 end
 
-function Options_Setup()
+function NS.Options_Setup()
+  NS.RebuildOptions()
+
   LibStub("AceConfig-3.0"):RegisterOptionsTable(AddonName, NS.AceConfig)
   LibStub("AceConfigDialog-3.0"):AddToBlizOptions(AddonName, AddonName)
 
@@ -1719,7 +1694,7 @@ function Options_Setup()
   SLASH_NPT2 = "/npt"
 
   function SlashCmdList.NPT(message)
-    Options_SlashCommands(message)
+    NS.Options_SlashCommands(message)
   end
 end
 
@@ -1741,7 +1716,7 @@ function NameplateTrinket:ADDON_LOADED(addon)
     -- Remove table values no longer found in default settings
     NS.CleanupDB(NameplateTrinketDB, NS.DefaultDatabase)
 
-    Options_Setup()
+    NS.Options_Setup()
   end
 end
 NameplateTrinketFrame:RegisterEvent("ADDON_LOADED")

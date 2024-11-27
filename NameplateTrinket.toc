@@ -1,6 +1,6 @@
 ## Interface: 110005
 ## Title: NameplateTrinket
-## Version: 2.1.2
+## Version: 2.1.3
 ## Author: RBGDEV
 ## Notes: Tracks trinket and other cc breaking spells on nameplates
 ## OptionalDeps: Ace3, LibStub
@@ -16,8 +16,8 @@
 embeds.xml
 #@end-no-lib-strip@
 
+spells.lua
 config.lua
 options.lua
 helpers.lua
-spells.lua
 NameplateTrinket.lua

@@ -62,8 +62,8 @@ NS.Interrupts = {
 NS.Trinkets = {
   [59752] = true,
   [7744] = true,
-  [42292] = true,
   [336126] = true,
-  [336139] = true,
   [283167] = true,
+  [42292] = true,
+  [336139] = true,
 }
