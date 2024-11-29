@@ -96,7 +96,7 @@ NS.CopyDefaults = function(src, dst)
   for k, v in pairs(src) do
     if type(v) == "table" then
       if k == "spells" then
-        if next(dst[k]) == nil then
+        if not dst[k] or next(dst[k]) == nil then
           dst[k] = NS.CopyDefaults(v, dst[k])
         end
       else

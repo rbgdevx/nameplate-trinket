@@ -54,6 +54,7 @@ NS.AllCooldowns = AllCooldowns
 
 local DefaultDatabase = {
   global = {
+    test = false,
     anchor = "BOTTOMLEFT",
     anchorTo = "TOPRIGHT",
     growDirection = "right",
@@ -71,7 +72,6 @@ local DefaultDatabase = {
     sortOrder = NS.SORT_MODE_TRINKET_INTERRUPT_OTHER,
     frameStrata = "HIGH",
     enableGlow = true,
-    test = false,
     showEverywhere = false,
     instanceTypes = {
       none = true,

@@ -1065,7 +1065,7 @@ function NS.DisableTestMode()
 end
 
 function NameplateTrinket:PLAYER_LOGOUT()
-  if NS.db.global.test and TestFrame then
+  if NS.db and NS.db.global.test and TestFrame then
     NS.DisableTestMode()
   end
 end
@@ -1231,7 +1231,7 @@ function NameplateTrinket:attachToNameplate(nameplate, guid)
   end
 
   addNameplateIcons(nameplate, guid)
-  if NS.db.global.test and not IsInInstance() then
+  if NS.db and NS.db.global.test and not IsInInstance() then
     addNameplateTestIcons(nameplate, guid)
   end
 end
@@ -1266,7 +1266,7 @@ end
 
 function NameplateTrinket:PLAYER_TARGET_CHANGED()
   ReallocateIcons(true)
-  if NS.db.global.test and not IsInInstance() then
+  if NS.db and NS.db.global.test and not IsInInstance() then
     ReallocateTestIcons(true)
   end
 end
@@ -1506,7 +1506,7 @@ local function instanceCheck()
     NameplateTrinketFrame.instanceType = correctedInstanceType
 
     ReallocateIcons(false)
-    if NS.db.global.test then
+    if NS.db and NS.db.global.test then
       if correctedInstanceType == "none" then
         ReallocateTestIcons(false)
       elseif TestFrame then
@@ -1520,7 +1520,7 @@ function NameplateTrinket:LOADING_SCREEN_DISABLED()
   After(2, function()
     NameplateTrinketFrame.wasOnLoadingScreen = false
 
-    if NS.db.global.test and not IsInInstance() then
+    if NS.db and NS.db.global.test and not IsInInstance() then
       NS.EnableTestMode()
     end
   end)
@@ -1595,17 +1595,6 @@ function NameplateTrinket:PLAYER_ENTERING_WORLD()
   -- end
   -- TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, OnTooltipSetItem)
 
-  NS.INSTANCE_TYPES = {
-    -- nil resolves to "unknown"
-    ["unknown"] = NS.db.global.instanceTypes.unknown, -- when in an unknown instance
-    ["none"] = NS.db.global.instanceTypes.none, -- when outside an instance
-    ["pvp"] = NS.db.global.instanceTypes.pvp, --  when in a battleground
-    ["arena"] = NS.db.global.instanceTypes.arena, -- when in an arena
-    ["party"] = NS.db.global.instanceTypes.party, -- when in a 5-man instance
-    ["raid"] = NS.db.global.instanceTypes.raid, -- when in a raid instance
-    ["scenario"] = NS.db.global.instanceTypes.scenario, -- when in a scenario
-  }
-
   instanceCheck()
 
   twipe(TestSpellsPerPlayerGUID)
@@ -1636,7 +1625,7 @@ function NameplateTrinket:PLAYER_ENTERING_WORLD()
     NameplateTrinketFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
     NameplateTrinketFrame:RegisterEvent("PVP_MATCH_ACTIVE")
     NameplateTrinketFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-    if NS.db.global.targetOnly then
+    if NS.db and NS.db.global.targetOnly then
       NameplateTrinketFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
     end
   end
@@ -1644,6 +1633,17 @@ end
 
 function NameplateTrinket:PLAYER_LOGIN()
   NameplateTrinketFrame:UnregisterEvent("PLAYER_LOGIN")
+
+  NS.INSTANCE_TYPES = {
+    -- nil resolves to "unknown"
+    ["unknown"] = NS.db and NS.db.global.instanceTypes.unknown or NS.DefaultDatabase.global.instanceTypes.unknown, -- when in an unknown instance
+    ["none"] = NS.db and NS.db.global.instanceTypes.none or NS.DefaultDatabase.global.instanceTypes.none, -- when outside an instance
+    ["pvp"] = NS.db and NS.db.global.instanceTypes.pvp or NS.DefaultDatabase.global.instanceTypes.pvp, --  when in a battleground
+    ["arena"] = NS.db and NS.db.global.instanceTypes.arena or NS.DefaultDatabase.global.instanceTypes.arena, -- when in an arena
+    ["party"] = NS.db and NS.db.global.instanceTypes.party or NS.DefaultDatabase.global.instanceTypes.party, -- when in a 5-man instance
+    ["raid"] = NS.db and NS.db.global.instanceTypes.raid or NS.DefaultDatabase.global.instanceTypes.raid, -- when in a raid instance
+    ["scenario"] = NS.db and NS.db.global.instanceTypes.scenario or NS.DefaultDatabase.global.instanceTypes.scenario, -- when in a scenario
+  }
 
   NameplateTrinketFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
   NameplateTrinketFrame:RegisterEvent("PLAYER_LEAVING_WORLD")
@@ -1655,7 +1655,7 @@ NameplateTrinketFrame:RegisterEvent("PLAYER_LOGIN")
 function NS.OnDbChanged()
   NameplateTrinketFrame.dbChanged = true
 
-  if NS.db.global.targetOnly then
+  if NS.db and NS.db.global.targetOnly then
     NameplateTrinketFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
   else
     NameplateTrinketFrame:UnregisterEvent("PLAYER_TARGET_CHANGED")
@@ -1673,7 +1673,7 @@ function NS.OnDbChanged()
   }
 
   ReallocateIcons(true)
-  if NS.db.global.test and not IsInInstance() then
+  if NS.db and NS.db.global.test and not IsInInstance() then
     ReallocateTestIcons(true)
   end
 

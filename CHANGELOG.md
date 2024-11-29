@@ -1,5 +1,9 @@
 # Nameplate Trinket
 
+## [v2.1.4](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.4) (2024-11-279)
+
+- Fixing some database initialization bugs
+
 ## [v2.1.3](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.3) (2024-11-27)
 
 - Added all new Spells tab! This allows you to see and control all the spells being tracked
