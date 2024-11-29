@@ -550,7 +550,6 @@ local AceConfig = {
           func = function()
             NameplateTrinketDB = CopyTable(NS.DefaultDatabase)
             NS.db = CopyTable(NS.DefaultDatabase)
-            NS.ResetDB()
             NS.OnDbChanged()
           end,
         },

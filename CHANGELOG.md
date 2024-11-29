@@ -1,6 +1,10 @@
 # Nameplate Trinket
 
-## [v2.1.4](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.4) (2024-11-279)
+## [v2.1.5](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.5) (2024-11-27)
+
+- Removing call to function that doesn't exist
+
+## [v2.1.4](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.4) (2024-11-27)
 
 - Fixing some database initialization bugs
 
