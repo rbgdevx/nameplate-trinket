@@ -9,11 +9,13 @@ local UnitIsPlayer = UnitIsPlayer
 local UnitIsFriend = UnitIsFriend
 -- local UnitIsEnemy = UnitIsEnemy
 -- local UnitCanAttack = UnitCanAttack
-local UnitHealth = UnitHealth
+-- local UnitHealth = UnitHealth
 local UnitIsDeadOrGhost = UnitIsDeadOrGhost
 -- local UnitReaction = UnitReaction
 local UnitAffectingCombat = UnitAffectingCombat
+local UnitTokenFromGUID = UnitTokenFromGUID
 local UnitExists = UnitExists
+local UnitClass = UnitClass
 local issecure = issecure
 local pairs = pairs
 local ipairs = ipairs
@@ -30,6 +32,7 @@ local tinsert = table.insert
 local tsort = table.sort
 local twipe = table.wipe
 local smatch = string.match
+local sfind = string.find
 local bband = bit.band
 
 local GetNamePlateForUnit = C_NamePlate.GetNamePlateForUnit
@@ -38,8 +41,8 @@ local After = C_Timer.After
 local IsAddOnLoaded = C_AddOns.IsAddOnLoaded
 local GetSpellInfo = C_Spell.GetSpellInfo
 local GetSpellDescription = C_Spell.GetSpellDescription
--- local GetUnitTooltip = C_TooltipInfo.GetUnit
--- local GUIDIsPlayer = C_PlayerInfo.GUIDIsPlayer
+local GetUnitTooltip = C_TooltipInfo.GetUnit
+local GUIDIsPlayer = C_PlayerInfo.GUIDIsPlayer
 
 local SpellTextureByID = NS.SpellTextureByID
 local Interrupts = NS.Interrupts
@@ -94,15 +97,23 @@ local TestSpellsPerPlayerGUID = {}
 local Nameplates = {}
 local NameplatesVisible = {}
 local Healers = {}
--- local HEALER_SPECS = {
---   ["Restoration Druid"] = 105,
---   ["Restoration Shaman"] = 264,
---   ["Mistweaver Monk"] = 270,
---   ["Holy Priest"] = 257,
---   ["Holy Paladin"] = 65,
---   ["Discipline Priest"] = 256,
---   ["Preservation Evoker"] = 1468,
--- }
+local HEALER_CLASS_IDS = {
+  [2] = true,
+  [5] = true,
+  [7] = true,
+  [10] = true,
+  [11] = true,
+  [13] = true,
+}
+local HEALER_SPECS = {
+  ["Restoration Druid"] = 105,
+  ["Restoration Shaman"] = 264,
+  ["Mistweaver Monk"] = 270,
+  ["Holy Priest"] = 257,
+  ["Holy Paladin"] = 65,
+  ["Discipline Priest"] = 256,
+  ["Preservation Evoker"] = 1468,
+}
 local HEALER_SPELL_EVENTS = {
   ["SPELL_HEAL"] = true,
   ["SPELL_AURA_APPLIED"] = true,
@@ -127,7 +138,7 @@ local HEALER_SPELLS = {
   [204197] = "PRIEST", -- Purge of the Wicked
   [314867] = "PRIEST", -- Shadow Covenant
   -- Druid
-  [102351] = "DRUID", -- Cnenarion Ward
+  [102351] = "DRUID", -- Cenarion Ward
   [33763] = "DRUID", -- Nourish
   [81262] = "DRUID", -- Efflorescence
   [391888] = "DRUID", -- Adaptive Swarm -- Shared with Feral
@@ -149,7 +160,7 @@ local HEALER_SPELLS = {
   [114165] = "PALADIN", -- Holy Prism
   [148039] = "PALADIN", -- Barrier of Faith
   -- Monk
-  [124682] = "MONK", -- Envelopping Mist
+  [124682] = "MONK", -- Enveloping Mist
   [191837] = "MONK", -- Essence Font
   [115151] = "MONK", -- Renewing Mist
   [116680] = "MONK", -- Thunder Focus Tea
@@ -200,6 +211,50 @@ local function GetHealthBarFrame(nameplate)
     end
   end
   return nil
+end
+
+local function checkIsHealer(nameplate, guid)
+  if not nameplate.namePlateUnitToken then
+    return
+  end
+
+  local unit = nameplate.namePlateUnitToken
+
+  local isPlayer = UnitIsPlayer(unit)
+  local _, _, classId = UnitClass(unit)
+  local canBeHealer = classId ~= nil and HEALER_CLASS_IDS[classId] == true
+
+  if not isPlayer or not canBeHealer or Healers[guid] == true then
+    return
+  end
+
+  local tooltipData = GetUnitTooltip(unit)
+  if tooltipData then
+    if
+      tooltipData.guid
+      and tooltipData.lines
+      and #tooltipData.lines >= 3
+      and tooltipData.type == Enum.TooltipDataType.Unit
+    then
+      for _, line in ipairs(tooltipData.lines) do
+        if line and line.type == Enum.TooltipDataLineType.None then
+          if line.leftText and line.leftText ~= "" then
+            if Healers[tooltipData.guid] and HEALER_SPECS[line.leftText] then
+              break
+            end
+            if Healers[tooltipData.guid] and not HEALER_SPECS[line.leftText] then
+              Healers[tooltipData.guid] = nil
+              break
+            end
+            if not Healers[tooltipData.guid] and HEALER_SPECS[line.leftText] then
+              Healers[tooltipData.guid] = true
+              break
+            end
+          end
+        end
+      end
+    end
+  end
 end
 
 local CDSortFunctions = {
@@ -780,6 +835,18 @@ local function addNameplateIcons(nameplate, guid)
 
   local unit = nameplate.namePlateUnitToken
 
+  local isPlayer = UnitIsPlayer(unit)
+  local isNpc = not isPlayer
+  local isSelf = UnitIsUnit(unit, "player")
+  local isFriend = UnitIsFriend("player", unit)
+  -- local isEnemy = UnitIsEnemy("player", unit)
+  -- local canAttack = UnitCanAttack("player", unit)
+  -- local isHealer = (NS.isHealer("player") or Healers[guid]) and true or false
+  local isDeadOrGhost = UnitIsDeadOrGhost(unit)
+  local isAlive = not isDeadOrGhost
+  local isTarget = UnitIsUnit(unit, "target")
+  local targetExists = UnitExists("target")
+
   --[[
   -- local r = UnitReaction("player", unit)
   -- if r then
@@ -791,19 +858,8 @@ local function addNameplateIcons(nameplate, guid)
   -- local isNeutral = (reaction and reaction == 4) and not isSelf
   -- local isFriend = (reaction and reaction >= 5) and not isSelf
 
-  local isPlayer = UnitIsPlayer(unit)
-  local isNpc = not isPlayer
-  local isSelf = UnitIsUnit(unit, "player")
-  local isFriend = UnitIsFriend("player", unit)
-  -- local isEnemy = UnitIsEnemy("player", unit)
-  -- local canAttack = UnitCanAttack("player", unit)
-  -- local isHealer = NS.isHealer("player") or Healers[guid] and true or false
-  local isDeadOrGhost = UnitIsDeadOrGhost(unit)
-  local isAlive = not isDeadOrGhost and UnitHealth(unit) >= 1
-  local hideDead = not isAlive
-  local isTarget = UnitIsUnit(unit, "target")
-  local targetExists = UnitExists("target")
   local targetIsUnit = targetExists and isTarget
+  local hideDead = not isAlive
   local hideNonTargets = NS.db.global.targetOnly and (not targetExists or not targetIsUnit)
   local hideAllies = not NS.db.global.showOnAllies and isFriend
   local hideOnSelf = not NS.db.global.showSelf and isSelf
@@ -834,8 +890,8 @@ local function addNameplateIcons(nameplate, guid)
     nameplate.nptIconFrame:SetHeight(NS.db.global.iconSize)
     nameplate.nptIconFrame:SetFrameStrata(NS.db.global.frameStrata)
     nameplate.nptIconFrame:ClearAllPoints()
-    local frame = GetSafeNameplateFrame(nameplate)
-    local anchorFrame = frame and frame.healthBar or nameplate
+    local healthBar = GetHealthBarFrame(nameplate)
+    local anchorFrame = healthBar and healthBar or nameplate
     -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
     nameplate.nptIconFrame:SetPoint(
       NS.db.global.anchor,
@@ -856,8 +912,8 @@ local function addNameplateIcons(nameplate, guid)
     nameplate.nptIconFrame:SetHeight(NS.db.global.iconSize)
     nameplate.nptIconFrame:SetFrameStrata(NS.db.global.frameStrata)
     nameplate.nptIconFrame:ClearAllPoints()
-    local frame = GetSafeNameplateFrame(nameplate)
-    local anchorFrame = frame and frame.healthBar or nameplate
+    local healthBar = GetHealthBarFrame(nameplate)
+    local anchorFrame = healthBar and healthBar or nameplate
     -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
     nameplate.nptIconFrame:SetPoint(
       NS.db.global.anchor,
@@ -881,6 +937,18 @@ local function addNameplateTestIcons(nameplate, guid)
 
   local unit = nameplate.namePlateUnitToken
 
+  local isPlayer = UnitIsPlayer(unit)
+  local isNpc = not isPlayer
+  local isSelf = UnitIsUnit(unit, "player")
+  local isFriend = UnitIsFriend("player", unit)
+  -- local isEnemy = UnitIsEnemy("player", unit)
+  -- local canAttack = UnitCanAttack("player", unit)
+  -- local isHealer = (NS.isHealer("player") or Healers[guid]) and true or false
+  local isDeadOrGhost = UnitIsDeadOrGhost(unit)
+  local isAlive = not isDeadOrGhost
+  local isTarget = UnitIsUnit(unit, "target")
+  local targetExists = UnitExists("target")
+
   --[[
   -- local r = UnitReaction("player", unit)
   -- if r then
@@ -892,19 +960,8 @@ local function addNameplateTestIcons(nameplate, guid)
   -- local isNeutral = (reaction and reaction == 4) and not isSelf
   -- local isFriend = (reaction and reaction >= 5) and not isSelf
 
-  local isPlayer = UnitIsPlayer(unit)
-  local isNpc = not isPlayer
-  local isSelf = UnitIsUnit(unit, "player")
-  local isFriend = UnitIsFriend("player", unit)
-  -- local isEnemy = UnitIsEnemy("player", unit)
-  -- local canAttack = UnitCanAttack("player", unit)
-  -- local isHealer = NS.isHealer("player") or Healers[guid] and true or false
-  local isDeadOrGhost = UnitIsDeadOrGhost(unit)
-  local isAlive = not isDeadOrGhost and UnitHealth(unit) >= 1
-  local hideDead = not isAlive
-  local isTarget = UnitIsUnit(unit, "target")
-  local targetExists = UnitExists("target")
   local targetIsUnit = targetExists and isTarget
+  local hideDead = not isAlive
   local hideNonTargets = NS.db.global.targetOnly and (not targetExists or not targetIsUnit)
   local hideAllies = not NS.db.global.showOnAllies and isFriend
   local hideOnSelf = not NS.db.global.showSelf and isSelf
@@ -936,8 +993,8 @@ local function addNameplateTestIcons(nameplate, guid)
     nameplate.nptTestIconFrame:SetFrameStrata(NS.db.global.frameStrata)
     nameplate.nptTestIconFrame:SetScale(1)
     nameplate.nptTestIconFrame:ClearAllPoints()
-    local frame = GetSafeNameplateFrame(nameplate)
-    local anchorFrame = frame and frame.healthBar or nameplate
+    local healthBar = GetHealthBarFrame(nameplate)
+    local anchorFrame = healthBar and healthBar or nameplate
     -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
     nameplate.nptTestIconFrame:SetPoint(
       NS.db.global.anchor,
@@ -956,8 +1013,8 @@ local function addNameplateTestIcons(nameplate, guid)
     nameplate.nptTestIconFrame:SetWidth(NS.db.global.iconSize)
     nameplate.nptTestIconFrame:SetHeight(NS.db.global.iconSize)
     nameplate.nptTestIconFrame:SetFrameStrata(NS.db.global.frameStrata)
-    local frame = GetSafeNameplateFrame(nameplate)
-    local anchorFrame = frame and frame.healthBar or nameplate
+    local healthBar = GetHealthBarFrame(nameplate)
+    local anchorFrame = healthBar and healthBar or nameplate
     -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
     nameplate.nptTestIconFrame:SetPoint(
       NS.db.global.anchor,
@@ -1094,8 +1151,8 @@ function ReallocateIcons(clearSpells)
       nameplate.nptIconFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
       nameplate.nptIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
       nameplate.nptIconFrame:ClearAllPoints()
-      local frame = GetSafeNameplateFrame(nameplate)
-      local anchorFrame = frame and frame.healthBar or nameplate
+      local healthBar = GetHealthBarFrame(nameplate)
+      local anchorFrame = healthBar and healthBar or nameplate
       nameplate.nptIconFrame:SetPoint(
         NS.db.global.anchor,
         anchorFrame,
@@ -1148,8 +1205,8 @@ function ReallocateTestIcons(clearSpells)
       nameplate.nptTestIconFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
       nameplate.nptTestIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
       nameplate.nptTestIconFrame:ClearAllPoints()
-      local frame = GetSafeNameplateFrame(nameplate)
-      local anchorFrame = frame and frame.healthBar or nameplate
+      local healthBar = GetHealthBarFrame(nameplate)
+      local anchorFrame = healthBar and healthBar or nameplate
       nameplate.nptTestIconFrame:SetPoint(
         NS.db.global.anchor,
         anchorFrame,
@@ -1230,6 +1287,8 @@ function NameplateTrinket:attachToNameplate(nameplate, guid)
     end
   end
 
+  checkIsHealer(nameplate, guid)
+
   addNameplateIcons(nameplate, guid)
   if NS.db and NS.db.global.test and not IsInInstance() then
     addNameplateTestIcons(nameplate, guid)
@@ -1299,7 +1358,7 @@ function NameplateTrinket:COMBAT_LOG_EVENT_UNFILTERED()
   if hideInstanceTypes then
     return
   end
-  local _, subevent, _, sourceGUID, _, sourceFlags, _, destGUID, _, _, _ = CombatLogGetCurrentEventInfo()
+  local _, subevent, _, sourceGUID, _, sourceFlags, _, destGUID, _, destFlags, _ = CombatLogGetCurrentEventInfo()
   if not (sourceGUID or destGUID) then
     return
   end
@@ -1307,11 +1366,22 @@ function NameplateTrinket:COMBAT_LOG_EVENT_UNFILTERED()
   if hideForSelf then
     return
   end
-  -- @TODO: don't want to deal with Mind Controlled players right now since they become pets
-  -- local isPlayer = bband(sourceFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0
-  -- if not isPlayer then
-  --   return
-  -- end
+  local isMindControlled = false
+  local isNotPetOrPlayer = false
+  local isPlayer = bband(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0
+  if not isPlayer then
+    if sfind(destGUID, "Player-") then
+      -- Players have same bitmask as player pets when they're mindcontrolled and MC aura breaks, so we need to distinguish these
+      -- so we can ignore the player pets but not actual players
+      isMindControlled = true
+    end
+    if not isMindControlled then
+      return
+    end
+    if bband(destFlags, COMBATLOG_OBJECT_CONTROL_PLAYER) <= 0 then -- is not player pet or is not MCed
+      isNotPetOrPlayer = true
+    end
+  end
   local spellId = select(12, CombatLogGetCurrentEventInfo())
   if spellId then
     if HEALER_SPELL_EVENTS[subevent] and HEALER_SPELLS[spellId] then
@@ -1324,8 +1394,8 @@ function NameplateTrinket:COMBAT_LOG_EVENT_UNFILTERED()
       if entry ~= nil and entry.enabled then
         local cooldown = tonumber(entry.cooldown)
         if cooldown ~= nil and cooldown > 0 then
-          local trackTrinketOnly = NS.db.global.trinketOnly and not Trinkets[spellId]
-          if trackTrinketOnly then
+          local trinketOnly = NS.db.global.trinketOnly and not Trinkets[spellId]
+          if trinketOnly then
             return
           end
           if
@@ -1387,6 +1457,7 @@ function NameplateTrinket:COMBAT_LOG_EVENT_UNFILTERED()
           for nameplate, guid in pairs(NameplatesVisible) do
             if nameplate and guid and guid == sourceGUID then
               addNameplateIcons(nameplate, guid)
+              break
             end
           end
         end
@@ -1491,6 +1562,15 @@ function NameplateTrinket:PVP_MATCH_ACTIVE()
   twipe(SpellsPerPlayerGUID)
 end
 
+function NameplateTrinket:PLAYER_SPECIALIZATION_CHANGED()
+  local guid = UnitGUID("player")
+  if guid then
+    if NS.isHealer("player") and not Healers[guid] then
+      Healers[guid] = true
+    end
+  end
+end
+
 local function instanceCheck()
   local inInstance, instanceType = IsInInstance()
 
@@ -1561,39 +1641,47 @@ function NameplateTrinket:PLAYER_ENTERING_WORLD()
   end
 
   -- this code only runs when you hover over a player
-  -- local function OnTooltipSetItem(tooltip, tooltipData)
-  --   if tooltip == GameTooltip then
-  --     if tooltipData then
-  --       if
-  --         tooltipData.guid
-  --         and tooltipData.lines
-  --         and #tooltipData.lines >= 3
-  --         and tooltipData.type == Enum.TooltipDataType.Unit
-  --       then
-  --         if GUIDIsPlayer(tooltipData.guid) then
-  --           for _, line in ipairs(tooltipData.lines) do
-  --             if line and line.type == Enum.TooltipDataLineType.None then
-  --               if line.leftText and line.leftText ~= "" then
-  --                 if Healers[tooltipData.guid] and HEALER_SPECS[line.leftText] then
-  --                   break
-  --                 end
-  --                 if Healers[tooltipData.guid] and not HEALER_SPECS[line.leftText] then
-  --                   Healers[tooltipData.guid] = nil
-  --                   break
-  --                 end
-  --                 if not Healers[tooltipData.guid] and HEALER_SPECS[line.leftText] then
-  --                   Healers[tooltipData.guid] = true
-  --                   break
-  --                 end
-  --               end
-  --             end
-  --           end
-  --         end
-  --       end
-  --     end
-  --   end
-  -- end
-  -- TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, OnTooltipSetItem)
+  local function OnTooltipSetItem(tooltip, tooltipData)
+    if tooltip == GameTooltip then
+      if tooltipData then
+        if
+          tooltipData.guid
+          and tooltipData.lines
+          and #tooltipData.lines >= 3
+          and tooltipData.type == Enum.TooltipDataType.Unit
+        then
+          local unitToken = UnitTokenFromGUID(tooltipData.guid)
+          if not unitToken then
+            return
+          end
+          local isPlayer = UnitIsPlayer(unitToken)
+          local _, _, classId = UnitClass(unitToken)
+          local canBeHealer = classId ~= nil and HEALER_CLASS_IDS[classId] == true
+          if not isPlayer or not canBeHealer or Healers[tooltipData.guid] == true then
+            return
+          end
+          for _, line in ipairs(tooltipData.lines) do
+            if line and line.type == Enum.TooltipDataLineType.None then
+              if line.leftText and line.leftText ~= "" then
+                if Healers[tooltipData.guid] and HEALER_SPECS[line.leftText] then
+                  break
+                end
+                if Healers[tooltipData.guid] and not HEALER_SPECS[line.leftText] then
+                  Healers[tooltipData.guid] = nil
+                  break
+                end
+                if not Healers[tooltipData.guid] and HEALER_SPECS[line.leftText] then
+                  Healers[tooltipData.guid] = true
+                  break
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+  TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, OnTooltipSetItem)
 
   instanceCheck()
 
@@ -1625,6 +1713,7 @@ function NameplateTrinket:PLAYER_ENTERING_WORLD()
     NameplateTrinketFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
     NameplateTrinketFrame:RegisterEvent("PVP_MATCH_ACTIVE")
     NameplateTrinketFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+    NameplateTrinketFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
     if NS.db and NS.db.global.targetOnly then
       NameplateTrinketFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
     end

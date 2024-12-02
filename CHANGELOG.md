@@ -1,5 +1,12 @@
 # Nameplate Trinket
 
+## [v2.1.6](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.6) (2024-12-02)
+
+- Adding back old healer check code and updating to be more performant
+- Adding a few more checks to exclude npcs
+- Updating nameplate anchors
+- Opting out of combat log events for npcs while Accommodating for mind controlled players still
+
 ## [v2.1.5](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.5) (2024-11-27)
 
 - Removing call to function that doesn't exist

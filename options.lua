@@ -57,7 +57,6 @@ local AceConfig = {
           order = 2,
           set = function(_, val)
             NS.db.global.trinketOnly = val
-
             NS.OnDbChanged()
           end,
           get = function(_)
@@ -72,7 +71,6 @@ local AceConfig = {
           order = 3,
           set = function(_, val)
             NS.db.global.targetOnly = val
-
             NS.OnDbChanged()
           end,
           get = function(_)
@@ -87,7 +85,6 @@ local AceConfig = {
           order = 4,
           set = function(_, val)
             NS.db.global.showSelf = val
-
             NS.OnDbChanged()
           end,
           get = function(_)
@@ -102,7 +99,6 @@ local AceConfig = {
           order = 5,
           set = function(_, val)
             NS.db.global.showOnAllies = val
-
             NS.OnDbChanged()
           end,
           get = function(_)
@@ -117,7 +113,6 @@ local AceConfig = {
           order = 6,
           set = function(_, val)
             NS.db.global.ignoreNameplateAlpha = val
-
             NS.OnDbChanged()
           end,
           get = function(_)
@@ -132,7 +127,6 @@ local AceConfig = {
           order = 7,
           set = function(_, val)
             NS.db.global.ignoreNameplateScale = val
-
             NS.OnDbChanged()
           end,
           get = function(_)
@@ -147,7 +141,6 @@ local AceConfig = {
           order = 8,
           set = function(_, val)
             NS.db.global.enableGlow = val
-
             NS.OnDbChanged()
           end,
           get = function(_)
@@ -162,7 +155,6 @@ local AceConfig = {
           order = 9,
           set = function(_, val)
             NS.db.global.showEverywhere = val
-
             NS.OnDbChanged()
           end,
           get = function(_)
@@ -188,7 +180,6 @@ local AceConfig = {
               end,
               set = function(_, val)
                 NS.db.global.instanceTypes.none = val
-
                 NS.OnDbChanged()
               end,
               get = function(_)
@@ -205,7 +196,6 @@ local AceConfig = {
               end,
               set = function(_, val)
                 NS.db.global.instanceTypes.arena = val
-
                 NS.OnDbChanged()
               end,
               get = function(_)
@@ -222,7 +212,6 @@ local AceConfig = {
               end,
               set = function(_, val)
                 NS.db.global.instanceTypes.pvp = val
-
                 NS.OnDbChanged()
               end,
               get = function(_)
@@ -239,7 +228,6 @@ local AceConfig = {
               end,
               set = function(_, val)
                 NS.db.global.instanceTypes.raid = val
-
                 NS.OnDbChanged()
               end,
               get = function(_)
@@ -256,7 +244,6 @@ local AceConfig = {
               end,
               set = function(_, val)
                 NS.db.global.instanceTypes.party = val
-
                 NS.OnDbChanged()
               end,
               get = function(_)
@@ -273,7 +260,6 @@ local AceConfig = {
               end,
               set = function(_, val)
                 NS.db.global.instanceTypes.scenario = val
-
                 NS.OnDbChanged()
               end,
               get = function(_)
@@ -291,7 +277,6 @@ local AceConfig = {
               end,
               set = function(_, val)
                 NS.db.global.instanceTypes.unknown = val
-
                 NS.OnDbChanged()
               end,
               get = function(_)
@@ -322,7 +307,6 @@ local AceConfig = {
           },
           set = function(_, val)
             NS.db.global.sortOrder = val
-
             NS.OnDbChanged()
           end,
           get = function(_)
@@ -347,7 +331,6 @@ local AceConfig = {
           },
           set = function(_, val)
             NS.db.global.frameStrata = val
-
             NS.OnDbChanged()
           end,
           get = function(_)
@@ -366,7 +349,6 @@ local AceConfig = {
           step = 0.01,
           set = function(_, val)
             NS.db.global.iconAlpha = val
-
             NS.OnDbChanged()
           end,
           get = function(_)
@@ -384,7 +366,6 @@ local AceConfig = {
           step = 1,
           set = function(_, val)
             NS.db.global.iconSize = val
-
             NS.OnDbChanged()
           end,
           get = function(_)
@@ -403,7 +384,6 @@ local AceConfig = {
           step = 1,
           set = function(_, val)
             NS.db.global.iconSpacing = val
-
             NS.OnDbChanged()
           end,
           get = function(_)
@@ -440,7 +420,6 @@ local AceConfig = {
           },
           set = function(_, val)
             NS.db.global.anchor = val
-
             NS.OnDbChanged()
           end,
           get = function(_)
@@ -476,7 +455,6 @@ local AceConfig = {
           },
           set = function(_, val)
             NS.db.global.anchorTo = val
-
             NS.OnDbChanged()
           end,
           get = function(_)
@@ -495,7 +473,6 @@ local AceConfig = {
           },
           set = function(_, val)
             NS.db.global.growDirection = val
-
             NS.OnDbChanged()
           end,
           get = function(_)
@@ -515,7 +492,6 @@ local AceConfig = {
           step = 1,
           set = function(_, val)
             NS.db.global.offsetX = val
-
             NS.OnDbChanged()
           end,
           get = function(_)
@@ -534,7 +510,6 @@ local AceConfig = {
           step = 1,
           set = function(_, val)
             NS.db.global.offsetY = val
-
             NS.OnDbChanged()
           end,
           get = function(_)
