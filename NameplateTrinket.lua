@@ -42,7 +42,7 @@ local IsAddOnLoaded = C_AddOns.IsAddOnLoaded
 local GetSpellInfo = C_Spell.GetSpellInfo
 local GetSpellDescription = C_Spell.GetSpellDescription
 local GetUnitTooltip = C_TooltipInfo.GetUnit
-local GUIDIsPlayer = C_PlayerInfo.GUIDIsPlayer
+-- local GUIDIsPlayer = C_PlayerInfo.GUIDIsPlayer
 
 local SpellTextureByID = NS.SpellTextureByID
 local Interrupts = NS.Interrupts
@@ -67,7 +67,7 @@ NameplateTrinketFrame.loaded = false
 NameplateTrinketFrame.dbChanged = false
 NS.NameplateTrinket.frame = NameplateTrinketFrame
 
--- local COMBATLOG_OBJECT_TYPE_PLAYER = COMBATLOG_OBJECT_TYPE_PLAYER
+local COMBATLOG_OBJECT_TYPE_PLAYER = COMBATLOG_OBJECT_TYPE_PLAYER
 local COMBATLOG_OBJECT_REACTION_HOSTILE = COMBATLOG_OBJECT_REACTION_HOSTILE
 local SPELL_PVPTRINKET = NS.SPELL_PVPTRINKET
 local SPELL_PVPADAPTATION = NS.SPELL_PVPADAPTATION
@@ -206,6 +206,8 @@ local function GetHealthBarFrame(nameplate)
   if frame then
     if frame.HealthBarsContainer then
       return frame.HealthBarsContainer.healthBar
+    elseif frame.healthBar then
+      return frame.healthBar
     else
       return frame
     end
@@ -224,31 +226,29 @@ local function checkIsHealer(nameplate, guid)
   local _, _, classId = UnitClass(unit)
   local canBeHealer = classId ~= nil and HEALER_CLASS_IDS[classId] == true
 
-  if not isPlayer or not canBeHealer or Healers[guid] == true then
-    return
-  end
-
-  local tooltipData = GetUnitTooltip(unit)
-  if tooltipData then
-    if
-      tooltipData.guid
-      and tooltipData.lines
-      and #tooltipData.lines >= 3
-      and tooltipData.type == Enum.TooltipDataType.Unit
-    then
-      for _, line in ipairs(tooltipData.lines) do
-        if line and line.type == Enum.TooltipDataLineType.None then
-          if line.leftText and line.leftText ~= "" then
-            if Healers[tooltipData.guid] and HEALER_SPECS[line.leftText] then
-              break
-            end
-            if Healers[tooltipData.guid] and not HEALER_SPECS[line.leftText] then
-              Healers[tooltipData.guid] = nil
-              break
-            end
-            if not Healers[tooltipData.guid] and HEALER_SPECS[line.leftText] then
-              Healers[tooltipData.guid] = true
-              break
+  if isPlayer and canBeHealer and not Healers[guid] then
+    local tooltipData = GetUnitTooltip(unit)
+    if tooltipData then
+      if
+        tooltipData.guid
+        and tooltipData.lines
+        and #tooltipData.lines >= 3
+        and tooltipData.type == Enum.TooltipDataType.Unit
+      then
+        for _, line in ipairs(tooltipData.lines) do
+          if line and line.type == Enum.TooltipDataLineType.None then
+            if line.leftText and line.leftText ~= "" then
+              if Healers[tooltipData.guid] and HEALER_SPECS[line.leftText] then
+                break
+              end
+              if Healers[tooltipData.guid] and not HEALER_SPECS[line.leftText] then
+                Healers[tooltipData.guid] = nil
+                break
+              end
+              if not Healers[tooltipData.guid] and HEALER_SPECS[line.leftText] then
+                Healers[tooltipData.guid] = true
+                break
+              end
             end
           end
         end
@@ -868,12 +868,7 @@ local function addNameplateIcons(nameplate, guid)
   local hideNPCs = isNpc
   local hideDuringTestMode = NS.db.global.test and not IsInInstance()
   local hideIcons = hideDuringTestMode
-    or hideNPCs
-    or hideOnSelf
-    or hideDead
-    or hideAllies
-    or hideNonTargets
-    or hideInstanceTypes
+    and (hideNPCs or hideOnSelf or hideDead or hideAllies or hideNonTargets or hideInstanceTypes)
 
   if hideIcons then
     if nameplate.nptIconFrame then
@@ -970,12 +965,7 @@ local function addNameplateTestIcons(nameplate, guid)
   local hideNPCs = isNpc
   local hideDuringTestMode = not NS.db.global.test or IsInInstance()
   local hideIcons = hideDuringTestMode
-    or hideNPCs
-    or hideOnSelf
-    or hideDead
-    or hideAllies
-    or hideNonTargets
-    or hideInstanceTypes
+    and (hideNPCs or hideOnSelf or hideDead or hideAllies or hideNonTargets or hideInstanceTypes)
 
   if hideIcons then
     if nameplate.nptTestIconFrame then
@@ -1281,7 +1271,8 @@ function NameplateTrinket:attachToNameplate(nameplate, guid)
   end
 
   if not nameplate.rbgdAnchorFrame then
-    local attachmentFrame = GetHealthBarFrame(nameplate)
+    local healthBar = GetHealthBarFrame(nameplate)
+    local attachmentFrame = healthBar and healthBar or nameplate
     if attachmentFrame then
       nameplate.rbgdAnchorFrame = CreateFrame("Frame", nil, attachmentFrame)
     end

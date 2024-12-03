@@ -1,11 +1,19 @@
 # Nameplate Trinket
 
+## [v2.1.7](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.7) (2024-12-03)
+
+- Minor cleanup
+- Changing conditional logic on healer check function so it can pass through
+- Adding additional healthbar anchor option
+- Fixing test mode show/hide logic
+- Adding fallback attachment frame
+
 ## [v2.1.6](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.6) (2024-12-02)
 
 - Adding back old healer check code and updating to be more performant
 - Adding a few more checks to exclude npcs
 - Updating nameplate anchors
-- Opting out of combat log events for npcs while Accommodating for mind controlled players still
+- Opting out of combat log events for npcs while accommodating for mind controlled players still
 
 ## [v2.1.5](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.5) (2024-11-27)
 

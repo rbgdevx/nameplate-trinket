@@ -35,7 +35,7 @@ local AceConfig = {
           set = function(_, val)
             if val then
               if IsInInstance() then
-                print("Can't test while in instance")
+                print("Can't test while in an instance")
               else
                 NS.db.global.test = val
                 NS.EnableTestMode()
