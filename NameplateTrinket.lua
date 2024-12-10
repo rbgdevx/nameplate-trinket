@@ -31,7 +31,7 @@ local mmax = math.max
 local tinsert = table.insert
 local tsort = table.sort
 local twipe = table.wipe
-local smatch = string.match
+-- local smatch = string.match
 local sfind = string.find
 local bband = bit.band
 
@@ -175,51 +175,16 @@ local HEALER_SPELLS = {
   [373861] = "EVOKER", -- Temporal Anomaly
 }
 
-local function GetSafeNameplateFrame(nameplate)
-  if not nameplate then
-    return nil
-  end
-
-  if not nameplate.UnitFrame then
-    return nil
-  end
-
-  local frame = nameplate.UnitFrame
-
-  if frame:IsForbidden() then
-    return nil
-  end
-
-  if not frame.unit then
-    return nil
-  end
-
-  if not smatch(frame.unit, "nameplate") then
-    return nil
-  end
-
-  return frame
+local function GetUnitFrame(nameplate)
+  return nameplate.UnitFrame
 end
 
 local function GetHealthBarFrame(nameplate)
-  local frame = GetSafeNameplateFrame(nameplate)
-  if frame then
-    if frame.HealthBarsContainer then
-      return frame.HealthBarsContainer.healthBar
-    elseif frame.healthBar then
-      return frame.healthBar
-    else
-      return frame
-    end
-  end
-  return nil
+  local UnitFrame = GetUnitFrame(nameplate)
+  return UnitFrame.HealthBarsContainer
 end
 
 local function checkIsHealer(nameplate, guid)
-  if not nameplate.namePlateUnitToken then
-    return
-  end
-
   local unit = nameplate.namePlateUnitToken
 
   local isPlayer = UnitIsPlayer(unit)
@@ -588,7 +553,6 @@ local function SetTestCooldown(icon, remainingTime, started, cooldownLength, isA
   end
 end
 
--- frame = nameplate.UnitFrame
 function CreateIcon(nameplate, spellId, index)
   local iconFrame =
     CreateFrame("Frame", AddonName .. "IconFrame" .. "Spell" .. spellId .. "Index" .. index, nameplate.nptIconFrame)
@@ -640,7 +604,6 @@ function CreateIcon(nameplate, spellId, index)
   tinsert(nameplate.nptIcons, icon)
 end
 
--- frame = nameplate.UnitFrame
 function CreateTestIcon(nameplate, spellId, index)
   local iconFrame = CreateFrame(
     "Frame",
@@ -829,10 +792,6 @@ local function addTestIcons(nameplate, guid)
 end
 
 local function addNameplateIcons(nameplate, guid)
-  if not nameplate.namePlateUnitToken then
-    return
-  end
-
   local unit = nameplate.namePlateUnitToken
 
   local isPlayer = UnitIsPlayer(unit)
@@ -885,8 +844,7 @@ local function addNameplateIcons(nameplate, guid)
     nameplate.nptIconFrame:SetHeight(NS.db.global.iconSize)
     nameplate.nptIconFrame:SetFrameStrata(NS.db.global.frameStrata)
     nameplate.nptIconFrame:ClearAllPoints()
-    local healthBar = GetHealthBarFrame(nameplate)
-    local anchorFrame = healthBar and healthBar or nameplate
+    local anchorFrame = GetHealthBarFrame(nameplate)
     -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
     nameplate.nptIconFrame:SetPoint(
       NS.db.global.anchor,
@@ -907,8 +865,7 @@ local function addNameplateIcons(nameplate, guid)
     nameplate.nptIconFrame:SetHeight(NS.db.global.iconSize)
     nameplate.nptIconFrame:SetFrameStrata(NS.db.global.frameStrata)
     nameplate.nptIconFrame:ClearAllPoints()
-    local healthBar = GetHealthBarFrame(nameplate)
-    local anchorFrame = healthBar and healthBar or nameplate
+    local anchorFrame = GetHealthBarFrame(nameplate)
     -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
     nameplate.nptIconFrame:SetPoint(
       NS.db.global.anchor,
@@ -926,10 +883,6 @@ end
 NS.addNameplateIcons = addNameplateIcons
 
 local function addNameplateTestIcons(nameplate, guid)
-  if not nameplate.namePlateUnitToken then
-    return
-  end
-
   local unit = nameplate.namePlateUnitToken
 
   local isPlayer = UnitIsPlayer(unit)
@@ -983,8 +936,7 @@ local function addNameplateTestIcons(nameplate, guid)
     nameplate.nptTestIconFrame:SetFrameStrata(NS.db.global.frameStrata)
     nameplate.nptTestIconFrame:SetScale(1)
     nameplate.nptTestIconFrame:ClearAllPoints()
-    local healthBar = GetHealthBarFrame(nameplate)
-    local anchorFrame = healthBar and healthBar or nameplate
+    local anchorFrame = GetHealthBarFrame(nameplate)
     -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
     nameplate.nptTestIconFrame:SetPoint(
       NS.db.global.anchor,
@@ -1003,8 +955,7 @@ local function addNameplateTestIcons(nameplate, guid)
     nameplate.nptTestIconFrame:SetWidth(NS.db.global.iconSize)
     nameplate.nptTestIconFrame:SetHeight(NS.db.global.iconSize)
     nameplate.nptTestIconFrame:SetFrameStrata(NS.db.global.frameStrata)
-    local healthBar = GetHealthBarFrame(nameplate)
-    local anchorFrame = healthBar and healthBar or nameplate
+    local anchorFrame = GetHealthBarFrame(nameplate)
     -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
     nameplate.nptTestIconFrame:SetPoint(
       NS.db.global.anchor,
@@ -1021,26 +972,10 @@ local function addNameplateTestIcons(nameplate, guid)
 end
 NS.addNameplateTestIcons = addNameplateTestIcons
 
-local function refreshNameplates(override)
-  if not override and NameplateTrinketFrame.wasOnLoadingScreen then
-    return
-  end
-
-  for _, nameplate in pairs(GetNamePlates(issecure())) do
-    if nameplate and nameplate.namePlateUnitToken then
-      local guid = UnitGUID(nameplate.namePlateUnitToken)
-
-      if guid then
-        NameplateTrinket:attachToNameplate(nameplate, guid)
-      end
-    end
-  end
-end
-
 function NS.RefreshTestSpells()
   local currentTime = GetTime()
   for nameplate, guid in pairs(NameplatesVisible) do
-    if nameplate and guid then
+    if nameplate and nameplate.namePlateUnitToken and guid then
       if not TestSpellsPerPlayerGUID[guid] then
         TestSpellsPerPlayerGUID[guid] = {}
       end
@@ -1137,12 +1072,12 @@ end
 
 function ReallocateIcons(clearSpells)
   for nameplate in pairs(Nameplates) do
-    if nameplate and nameplate.nptIconFrame then
+    if nameplate and nameplate.UnitFrame and nameplate.nptIconFrame then
       nameplate.nptIconFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
       nameplate.nptIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
+      nameplate.nptIconFrame:SetFrameStrata(NS.db.global.frameStrata)
       nameplate.nptIconFrame:ClearAllPoints()
-      local healthBar = GetHealthBarFrame(nameplate)
-      local anchorFrame = healthBar and healthBar or nameplate
+      local anchorFrame = GetHealthBarFrame(nameplate)
       nameplate.nptIconFrame:SetPoint(
         NS.db.global.anchor,
         anchorFrame,
@@ -1182,7 +1117,7 @@ function ReallocateIcons(clearSpells)
   end
   if clearSpells then
     for nameplate, guid in pairs(NameplatesVisible) do
-      if nameplate and guid then
+      if nameplate and nameplate.namePlateUnitToken and guid then
         addNameplateIcons(nameplate, guid)
       end
     end
@@ -1191,12 +1126,12 @@ end
 
 function ReallocateTestIcons(clearSpells)
   for nameplate in pairs(Nameplates) do
-    if nameplate and nameplate.nptTestIconFrame then
+    if nameplate and nameplate.UnitFrame and nameplate.nptTestIconFrame then
       nameplate.nptTestIconFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
       nameplate.nptTestIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
+      nameplate.nptTestIconFrame:SetFrameStrata(NS.db.global.frameStrata)
       nameplate.nptTestIconFrame:ClearAllPoints()
-      local healthBar = GetHealthBarFrame(nameplate)
-      local anchorFrame = healthBar and healthBar or nameplate
+      local anchorFrame = GetHealthBarFrame(nameplate)
       nameplate.nptTestIconFrame:SetPoint(
         NS.db.global.anchor,
         anchorFrame,
@@ -1236,16 +1171,15 @@ function ReallocateTestIcons(clearSpells)
   end
   if clearSpells then
     for nameplate, guid in pairs(NameplatesVisible) do
-      if nameplate and guid then
+      if nameplate and nameplate.namePlateUnitToken and guid then
         addNameplateTestIcons(nameplate, guid)
       end
     end
   end
 end
 
--- frame = nameplate.UnitFrame
 function NameplateTrinket:detachFromNameplate(nameplate)
-  NameplatesVisible[nameplate] = nil
+  NameplatesVisible[nameplate] = false
 
   if nameplate.nptTestIconFrame ~= nil then
     nameplate.nptTestIconFrame:Hide()
@@ -1255,7 +1189,6 @@ function NameplateTrinket:detachFromNameplate(nameplate)
   end
 end
 
--- frame = nameplate.UnitFrame
 function NameplateTrinket:attachToNameplate(nameplate, guid)
   NameplatesVisible[nameplate] = guid
 
@@ -1271,11 +1204,9 @@ function NameplateTrinket:attachToNameplate(nameplate, guid)
   end
 
   if not nameplate.rbgdAnchorFrame then
-    local healthBar = GetHealthBarFrame(nameplate)
-    local attachmentFrame = healthBar and healthBar or nameplate
-    if attachmentFrame then
-      nameplate.rbgdAnchorFrame = CreateFrame("Frame", nil, attachmentFrame)
-    end
+    local attachmentFrame = GetHealthBarFrame(nameplate)
+    nameplate.rbgdAnchorFrame = CreateFrame("Frame", nil, attachmentFrame)
+    nameplate.rbgdAnchorFrame:SetFrameStrata(NS.db.global.frameStrata)
   end
 
   checkIsHealer(nameplate, guid)
@@ -1286,12 +1217,23 @@ function NameplateTrinket:attachToNameplate(nameplate, guid)
   end
 end
 
--- unitId == unitToken, UnitGUID takes unitId, formely unitToken, as its param
-function NameplateTrinket:NAME_PLATE_UNIT_REMOVED(unitToken)
-  if not unitToken then
+local function refreshNameplates(override)
+  if not override and NameplateTrinketFrame.wasOnLoadingScreen then
     return
   end
 
+  for _, nameplate in pairs(GetNamePlates(issecure())) do
+    if nameplate then
+      local guid = UnitGUID(nameplate.namePlateUnitToken)
+      if guid then
+        NameplateTrinket:attachToNameplate(nameplate, guid)
+      end
+    end
+  end
+end
+
+-- unitId == unitToken, UnitGUID takes unitId, formely unitToken, as its param
+function NameplateTrinket:NAME_PLATE_UNIT_REMOVED(unitToken)
   local nameplate = GetNamePlateForUnit(unitToken, issecure())
 
   if nameplate then
@@ -1302,10 +1244,6 @@ end
 -- UnitIsPlayer takes unitToken
 -- C_PlayerInfo.GUIDIsPlayer takes unitGUID
 function NameplateTrinket:NAME_PLATE_UNIT_ADDED(unitToken)
-  if not unitToken then
-    return
-  end
-
   local nameplate = GetNamePlateForUnit(unitToken, issecure())
   local guid = UnitGUID(unitToken)
 
@@ -1361,6 +1299,7 @@ function NameplateTrinket:COMBAT_LOG_EVENT_UNFILTERED()
   local isNotPetOrPlayer = false
   local isPlayer = bband(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0
   if not isPlayer then
+    -- UnitPlayerControlled -- https://warcraft.wiki.gg/wiki/API_UnitPlayerControlled
     if sfind(destGUID, "Player-") then
       -- Players have same bitmask as player pets when they're mindcontrolled and MC aura breaks, so we need to distinguish these
       -- so we can ignore the player pets but not actual players
@@ -1433,7 +1372,7 @@ function NameplateTrinket:COMBAT_LOG_EVENT_UNFILTERED()
               end
             end
             for nameplate, guid in pairs(NameplatesVisible) do
-              if nameplate and guid and guid == sourceGUID then
+              if nameplate and nameplate.namePlateUnitToken and guid and guid == sourceGUID then
                 addNameplateIcons(nameplate, guid)
                 break
               end
@@ -1446,7 +1385,7 @@ function NameplateTrinket:COMBAT_LOG_EVENT_UNFILTERED()
         if SpellsPerPlayerGUID[sourceGUID] then
           SpellsPerPlayerGUID[sourceGUID] = {}
           for nameplate, guid in pairs(NameplatesVisible) do
-            if nameplate and guid and guid == sourceGUID then
+            if nameplate and nameplate.namePlateUnitToken and guid and guid == sourceGUID then
               addNameplateIcons(nameplate, guid)
               break
             end
@@ -1690,7 +1629,7 @@ function NameplateTrinket:PLAYER_ENTERING_WORLD()
       timeElapsed = timeElapsed + elapsed
       if timeElapsed >= 1 then
         for nameplate, guid in pairs(NameplatesVisible) do
-          if nameplate and guid then
+          if nameplate and nameplate.namePlateUnitToken and guid then
             addNameplateIcons(nameplate, guid)
           end
         end
@@ -1716,6 +1655,7 @@ function NameplateTrinket:PLAYER_LOGIN()
 
   NS.INSTANCE_TYPES = {
     -- nil resolves to "unknown"
+    -- "unknown" - Used by a single map: Void Zone: Arathi Highlands (2695)
     ["unknown"] = NS.db and NS.db.global.instanceTypes.unknown or NS.DefaultDatabase.global.instanceTypes.unknown, -- when in an unknown instance
     ["none"] = NS.db and NS.db.global.instanceTypes.none or NS.DefaultDatabase.global.instanceTypes.none, -- when outside an instance
     ["pvp"] = NS.db and NS.db.global.instanceTypes.pvp or NS.DefaultDatabase.global.instanceTypes.pvp, --  when in a battleground

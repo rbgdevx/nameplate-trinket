@@ -26,7 +26,17 @@ NS.SORT_MODE_INTERRUPT_TRINKET_OTHER = "interrupt-trinket-other"
 NS.SORT_MODE_TRINKET_OTHER = "trinket-other"
 NS.SORT_MODE_INTERRUPT_OTHER = "interrupt-other"
 
-NS.INSTANCE_TYPES = {}
+NS.INSTANCE_TYPES = {
+  -- nil resolves to "unknown"
+  -- "unknown" - Used by a single map: Void Zone: Arathi Highlands (2695)
+  ["unknown"] = false, -- when in an unknown instance
+  ["none"] = false, -- when outside an instance
+  ["pvp"] = false, --  when in a battleground
+  ["arena"] = false, -- when in an arena
+  ["party"] = false, -- when in a 5-man instance
+  ["raid"] = false, -- when in a raid instance
+  ["scenario"] = false, -- when in a scenario
+}
 
 NS.SortSpellList = function(a, b)
   if a and b then
@@ -58,8 +68,8 @@ local DefaultDatabase = {
     anchor = "BOTTOMLEFT",
     anchorTo = "TOPRIGHT",
     growDirection = "right",
-    offsetX = 2,
-    offsetY = 2,
+    offsetX = 1,
+    offsetY = 1,
     iconAlpha = 1,
     iconSize = 24,
     iconSpacing = 1,
@@ -74,13 +84,13 @@ local DefaultDatabase = {
     enableGlow = true,
     showEverywhere = false,
     instanceTypes = {
+      unknown = false,
       none = true,
       pvp = true,
       arena = true,
       party = false,
       raid = false,
       scenario = false,
-      unknown = false,
     },
   },
   spells = {},

@@ -1,5 +1,10 @@
 # Nameplate Trinket
 
+## [v2.1.8](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.8) (2024-12-10)
+
+- Refactoring nameplate anchoring to be consistent and up to date with blizzards apis
+- updating default settings
+
 ## [v2.1.7](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.7) (2024-12-03)
 
 - Minor cleanup
