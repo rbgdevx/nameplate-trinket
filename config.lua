@@ -97,6 +97,11 @@ local DefaultDatabase = {
 }
 NS.DefaultDatabase = DefaultDatabase
 
+NS.OFFSET = {
+  x = DefaultDatabase.global.offsetX,
+  y = DefaultDatabase.global.offsetY,
+}
+
 local spellList = {}
 for spellId, cooldown in pairs(AllCooldowns) do
   local spellInfo = GetSpellInfo(spellId)

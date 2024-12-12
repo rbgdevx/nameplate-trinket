@@ -843,38 +843,24 @@ local function addNameplateIcons(nameplate, guid)
     nameplate.nptIconFrame:SetWidth(NS.db.global.iconSize)
     nameplate.nptIconFrame:SetHeight(NS.db.global.iconSize)
     nameplate.nptIconFrame:SetFrameStrata(NS.db.global.frameStrata)
-    nameplate.nptIconFrame:ClearAllPoints()
     local anchorFrame = GetHealthBarFrame(nameplate)
     -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
-    nameplate.nptIconFrame:SetPoint(
-      NS.db.global.anchor,
-      anchorFrame,
-      NS.db.global.anchorTo,
-      NS.db.global.offsetX,
-      NS.db.global.offsetY
-    )
+    nameplate.nptIconFrame:ClearAllPoints()
+    nameplate.nptIconFrame:SetPoint(NS.db.global.anchor, anchorFrame, NS.db.global.anchorTo, NS.OFFSET.x, NS.OFFSET.y)
     nameplate.nptIconFrame:SetScale(1)
     nameplate.nptIcons = {}
     nameplate.nptIconCount = 0
   end
 
-  if NameplateTrinketFrame.dbChanged then
-    nameplate.nptIconFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
-    nameplate.nptIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
-    nameplate.nptIconFrame:SetWidth(NS.db.global.iconSize)
-    nameplate.nptIconFrame:SetHeight(NS.db.global.iconSize)
-    nameplate.nptIconFrame:SetFrameStrata(NS.db.global.frameStrata)
-    nameplate.nptIconFrame:ClearAllPoints()
-    local anchorFrame = GetHealthBarFrame(nameplate)
-    -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
-    nameplate.nptIconFrame:SetPoint(
-      NS.db.global.anchor,
-      anchorFrame,
-      NS.db.global.anchorTo,
-      NS.db.global.offsetX,
-      NS.db.global.offsetY
-    )
-  end
+  nameplate.nptIconFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
+  nameplate.nptIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
+  nameplate.nptIconFrame:SetWidth(NS.db.global.iconSize)
+  nameplate.nptIconFrame:SetHeight(NS.db.global.iconSize)
+  nameplate.nptIconFrame:SetFrameStrata(NS.db.global.frameStrata)
+  local anchorFrame = GetHealthBarFrame(nameplate)
+  -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
+  nameplate.nptIconFrame:ClearAllPoints()
+  nameplate.nptIconFrame:SetPoint(NS.db.global.anchor, anchorFrame, NS.db.global.anchorTo, NS.OFFSET.x, NS.OFFSET.y)
 
   addIcons(nameplate, guid)
 
@@ -935,36 +921,28 @@ local function addNameplateTestIcons(nameplate, guid)
     nameplate.nptTestIconFrame:SetHeight(NS.db.global.iconSize)
     nameplate.nptTestIconFrame:SetFrameStrata(NS.db.global.frameStrata)
     nameplate.nptTestIconFrame:SetScale(1)
-    nameplate.nptTestIconFrame:ClearAllPoints()
     local anchorFrame = GetHealthBarFrame(nameplate)
     -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
+    nameplate.nptTestIconFrame:ClearAllPoints()
     nameplate.nptTestIconFrame:SetPoint(
       NS.db.global.anchor,
       anchorFrame,
       NS.db.global.anchorTo,
-      NS.db.global.offsetX,
-      NS.db.global.offsetY
+      NS.OFFSET.x,
+      NS.OFFSET.y
     )
     nameplate.nptTestIcons = {}
     nameplate.nptTestIconCount = 0
   end
 
-  if NameplateTrinketFrame.dbChanged then
-    nameplate.nptTestIconFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
-    nameplate.nptTestIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
-    nameplate.nptTestIconFrame:SetWidth(NS.db.global.iconSize)
-    nameplate.nptTestIconFrame:SetHeight(NS.db.global.iconSize)
-    nameplate.nptTestIconFrame:SetFrameStrata(NS.db.global.frameStrata)
-    local anchorFrame = GetHealthBarFrame(nameplate)
-    -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
-    nameplate.nptTestIconFrame:SetPoint(
-      NS.db.global.anchor,
-      anchorFrame,
-      NS.db.global.anchorTo,
-      NS.db.global.offsetX,
-      NS.db.global.offsetY
-    )
-  end
+  nameplate.nptTestIconFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
+  nameplate.nptTestIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
+  nameplate.nptTestIconFrame:SetWidth(NS.db.global.iconSize)
+  nameplate.nptTestIconFrame:SetHeight(NS.db.global.iconSize)
+  nameplate.nptTestIconFrame:SetFrameStrata(NS.db.global.frameStrata)
+  local anchorFrame = GetHealthBarFrame(nameplate)
+  -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
+  nameplate.nptTestIconFrame:SetPoint(NS.db.global.anchor, anchorFrame, NS.db.global.anchorTo, NS.OFFSET.x, NS.OFFSET.y)
 
   addTestIcons(nameplate, guid)
 
@@ -1076,15 +1054,9 @@ function ReallocateIcons(clearSpells)
       nameplate.nptIconFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
       nameplate.nptIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
       nameplate.nptIconFrame:SetFrameStrata(NS.db.global.frameStrata)
-      nameplate.nptIconFrame:ClearAllPoints()
       local anchorFrame = GetHealthBarFrame(nameplate)
-      nameplate.nptIconFrame:SetPoint(
-        NS.db.global.anchor,
-        anchorFrame,
-        NS.db.global.anchorTo,
-        NS.db.global.offsetX,
-        NS.db.global.offsetY
-      )
+      nameplate.nptIconFrame:ClearAllPoints()
+      nameplate.nptIconFrame:SetPoint(NS.db.global.anchor, anchorFrame, NS.db.global.anchorTo, NS.OFFSET.x, NS.OFFSET.y)
       local counter = 0
       for index, icon in pairs(nameplate.nptIcons) do
         icon.frame:SetWidth(NS.db.global.iconSize)
@@ -1130,14 +1102,14 @@ function ReallocateTestIcons(clearSpells)
       nameplate.nptTestIconFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
       nameplate.nptTestIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
       nameplate.nptTestIconFrame:SetFrameStrata(NS.db.global.frameStrata)
-      nameplate.nptTestIconFrame:ClearAllPoints()
       local anchorFrame = GetHealthBarFrame(nameplate)
+      nameplate.nptTestIconFrame:ClearAllPoints()
       nameplate.nptTestIconFrame:SetPoint(
         NS.db.global.anchor,
         anchorFrame,
         NS.db.global.anchorTo,
-        NS.db.global.offsetX,
-        NS.db.global.offsetY
+        NS.OFFSET.x,
+        NS.OFFSET.y
       )
       local counter = 0
       for index, icon in pairs(nameplate.nptTestIcons) do
@@ -1735,6 +1707,11 @@ function NameplateTrinket:ADDON_LOADED(addon)
 
     -- Remove table values no longer found in default settings
     NS.CleanupDB(NameplateTrinketDB, NS.DefaultDatabase)
+
+    NS.OFFSET = {
+      x = NS.db.global.offsetX,
+      y = NS.db.global.offsetY,
+    }
 
     NS.Options_Setup()
   end

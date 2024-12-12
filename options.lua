@@ -492,6 +492,7 @@ local AceConfig = {
           step = 1,
           set = function(_, val)
             NS.db.global.offsetX = val
+            NS.OFFSET.x = val
             NS.OnDbChanged()
           end,
           get = function(_)
@@ -510,6 +511,7 @@ local AceConfig = {
           step = 1,
           set = function(_, val)
             NS.db.global.offsetY = val
+            NS.OFFSET.y = val
             NS.OnDbChanged()
           end,
           get = function(_)

@@ -1,5 +1,9 @@
 # Nameplate Trinket
 
+## [v2.1.9](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.9) (2024-12-12)
+
+- Ensuring when you change the offsets that it applies everywhere immediately and stays even if you don't reload
+
 ## [v2.1.8](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.8) (2024-12-10)
 
 - Refactoring nameplate anchoring to be consistent and up to date with blizzards apis
