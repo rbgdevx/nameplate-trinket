@@ -12,6 +12,7 @@ local next = next
 local tinsert = table.insert
 local tsort = table.sort
 
+local GetSpellInfo = C_Spell.GetSpellInfo
 local GetSpellDescription = C_Spell.GetSpellDescription
 -- local GetSpellInfo = C_Spell.GetSpellInfo
 
@@ -27,7 +28,7 @@ local AceConfig = {
       type = "group",
       args = {
         test = {
-          name = "Turns on test mode for placement of icons",
+          name = "Enable test mode",
           desc = "Only works outside of an instance.",
           type = "toggle",
           width = "double",
@@ -313,30 +314,6 @@ local AceConfig = {
             return NS.db.global.sortOrder
           end,
         },
-        frameStrata = {
-          name = "Frame Strata",
-          desc = "Set how high or low the icons are in the frame stack (in front or behind things)",
-          type = "select",
-          width = "normal",
-          order = 12,
-          values = {
-            ["BACKGROUND"] = "Background",
-            ["LOW"] = "Low",
-            ["MEDIUM"] = "Medium",
-            ["HIGH"] = "High",
-            ["DIALOG"] = "Dialog",
-            ["FULLSCREEN"] = "Fullscreen",
-            ["FULLSCREEN_DIALOG"] = "Fullscreen Dialog",
-            ["TOOLTIP"] = "Tooltip",
-          },
-          set = function(_, val)
-            NS.db.global.frameStrata = val
-            NS.OnDbChanged()
-          end,
-          get = function(_)
-            return NS.db.global.frameStrata
-          end,
-        },
         spacing1 = { type = "description", order = 13, name = " " },
         iconAlpha = {
           name = "Icon Alpha",
@@ -550,7 +527,7 @@ local AceConfig = {
               else
                 local spellId = tonumber(value)
                 if spellId then
-                  local spellInfo = C_Spell.GetSpellInfo(spellId)
+                  local spellInfo = GetSpellInfo(spellId)
                   if spellInfo then
                     NS.AceConfig.args.spells.args.addSpellError.name = "|cFF00FF00"
                       .. spellInfo.name
@@ -569,7 +546,7 @@ local AceConfig = {
                     NS.AceConfig.args.spells.args.addSpellError.name = "|cFFFF0000" .. " Invalid Spell ID"
                   end
                 else
-                  local spellInfo = C_Spell.GetSpellInfo(value)
+                  local spellInfo = GetSpellInfo(value)
                   if spellInfo then
                     NS.AceConfig.args.spells.args.addSpellError.name = "|cFF00FF00"
                       .. spellInfo.name
@@ -701,10 +678,8 @@ NS.MakeOption = function(spellId, spellInfo, index)
           return NS.db[info[1]][info[2]] and tostring(NS.db[info[1]][info[2]][info[3]]) or ""
         end,
         set = function(info, value)
-          local spellId = tonumber(value)
-
           if spellId then
-            local checkedSpellInfo = C_Spell.GetSpellInfo(spellId)
+            local checkedSpellInfo = GetSpellInfo(spellId)
             if checkedSpellInfo then
               NS.db[info[1]][info[2]][info[3]] = spellId
 
@@ -719,7 +694,7 @@ NS.MakeOption = function(spellId, spellInfo, index)
             if trimmedValue == "" then
               NS.AceConfig.args.spells.args[SPELL_ID].args.spellIdError.name = "|cFFFF0000" .. " Must enter a value"
             else
-              local checkedSpellInfo = C_Spell.GetSpellInfo(value)
+              local checkedSpellInfo = GetSpellInfo(value)
               if checkedSpellInfo then
                 NS.db[info[1]][info[2]][info[3]] = spellId
 
@@ -926,18 +901,18 @@ end
 --   end
 -- end
 
-NS.RebuildOptions = function()
-  local rebuildList = {}
+NS.BuildOptions = function()
+  local buildList = {}
   for spellId, spellInfo in pairs(NS.db.spells) do
     local spell = {
       [spellId] = spellInfo,
     }
-    tinsert(rebuildList, spell)
+    tinsert(buildList, spell)
   end
-  tsort(rebuildList, NS.SortSpellList)
+  tsort(buildList, NS.SortSpellList)
 
-  for i = 1, #rebuildList do
-    local spell = rebuildList[i]
+  for i = 1, #buildList do
+    local spell = buildList[i]
     if spell then
       local spellId, spellInfo = next(spell)
       NS.MakeOption(spellId, spellInfo, i)

@@ -25,6 +25,7 @@ local CombatLogGetCurrentEventInfo = CombatLogGetCurrentEventInfo
 local select = select
 local tostring = tostring
 local tonumber = tonumber
+local print = print
 
 local mceil = math.ceil
 local mmax = math.max
@@ -43,6 +44,9 @@ local GetSpellInfo = C_Spell.GetSpellInfo
 local GetSpellDescription = C_Spell.GetSpellDescription
 local GetUnitTooltip = C_TooltipInfo.GetUnit
 -- local GUIDIsPlayer = C_PlayerInfo.GUIDIsPlayer
+
+local AceConfig = LibStub("AceConfig-3.0")
+local AceConfigDialog = LibStub("AceConfigDialog-3.0")
 
 local SpellTextureByID = NS.SpellTextureByID
 local Interrupts = NS.Interrupts
@@ -842,7 +846,6 @@ local function addNameplateIcons(nameplate, guid)
     nameplate.nptIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
     nameplate.nptIconFrame:SetWidth(NS.db.global.iconSize)
     nameplate.nptIconFrame:SetHeight(NS.db.global.iconSize)
-    nameplate.nptIconFrame:SetFrameStrata(NS.db.global.frameStrata)
     local anchorFrame = GetHealthBarFrame(nameplate)
     -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
     nameplate.nptIconFrame:ClearAllPoints()
@@ -856,7 +859,6 @@ local function addNameplateIcons(nameplate, guid)
   nameplate.nptIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
   nameplate.nptIconFrame:SetWidth(NS.db.global.iconSize)
   nameplate.nptIconFrame:SetHeight(NS.db.global.iconSize)
-  nameplate.nptIconFrame:SetFrameStrata(NS.db.global.frameStrata)
   local anchorFrame = GetHealthBarFrame(nameplate)
   -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
   nameplate.nptIconFrame:ClearAllPoints()
@@ -919,7 +921,6 @@ local function addNameplateTestIcons(nameplate, guid)
     nameplate.nptTestIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
     nameplate.nptTestIconFrame:SetWidth(NS.db.global.iconSize)
     nameplate.nptTestIconFrame:SetHeight(NS.db.global.iconSize)
-    nameplate.nptTestIconFrame:SetFrameStrata(NS.db.global.frameStrata)
     nameplate.nptTestIconFrame:SetScale(1)
     local anchorFrame = GetHealthBarFrame(nameplate)
     -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
@@ -939,9 +940,9 @@ local function addNameplateTestIcons(nameplate, guid)
   nameplate.nptTestIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
   nameplate.nptTestIconFrame:SetWidth(NS.db.global.iconSize)
   nameplate.nptTestIconFrame:SetHeight(NS.db.global.iconSize)
-  nameplate.nptTestIconFrame:SetFrameStrata(NS.db.global.frameStrata)
   local anchorFrame = GetHealthBarFrame(nameplate)
   -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
+  nameplate.nptTestIconFrame:ClearAllPoints()
   nameplate.nptTestIconFrame:SetPoint(NS.db.global.anchor, anchorFrame, NS.db.global.anchorTo, NS.OFFSET.x, NS.OFFSET.y)
 
   addTestIcons(nameplate, guid)
@@ -1053,7 +1054,6 @@ function ReallocateIcons(clearSpells)
     if nameplate and nameplate.UnitFrame and nameplate.nptIconFrame then
       nameplate.nptIconFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
       nameplate.nptIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
-      nameplate.nptIconFrame:SetFrameStrata(NS.db.global.frameStrata)
       local anchorFrame = GetHealthBarFrame(nameplate)
       nameplate.nptIconFrame:ClearAllPoints()
       nameplate.nptIconFrame:SetPoint(NS.db.global.anchor, anchorFrame, NS.db.global.anchorTo, NS.OFFSET.x, NS.OFFSET.y)
@@ -1101,7 +1101,6 @@ function ReallocateTestIcons(clearSpells)
     if nameplate and nameplate.UnitFrame and nameplate.nptTestIconFrame then
       nameplate.nptTestIconFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
       nameplate.nptTestIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
-      nameplate.nptTestIconFrame:SetFrameStrata(NS.db.global.frameStrata)
       local anchorFrame = GetHealthBarFrame(nameplate)
       nameplate.nptTestIconFrame:ClearAllPoints()
       nameplate.nptTestIconFrame:SetPoint(
@@ -1178,7 +1177,8 @@ function NameplateTrinket:attachToNameplate(nameplate, guid)
   if not nameplate.rbgdAnchorFrame then
     local attachmentFrame = GetHealthBarFrame(nameplate)
     nameplate.rbgdAnchorFrame = CreateFrame("Frame", nil, attachmentFrame)
-    nameplate.rbgdAnchorFrame:SetFrameStrata(NS.db.global.frameStrata)
+    nameplate.rbgdAnchorFrame:SetFrameStrata("HIGH")
+    nameplate.rbgdAnchorFrame:SetFrameLevel(attachmentFrame:GetFrameLevel() + 1)
   end
 
   checkIsHealer(nameplate, guid)
@@ -1673,16 +1673,14 @@ function NS.OnDbChanged()
 end
 
 function NS.Options_SlashCommands(_)
-  LibStub("AceConfigDialog-3.0"):Open(AddonName)
+  AceConfigDialog:Open(AddonName)
 end
 
 function NS.Options_Setup()
-  NS.RebuildOptions()
+  AceConfig:RegisterOptionsTable(AddonName, NS.AceConfig)
+  AceConfigDialog:AddToBlizOptions(AddonName, AddonName)
 
-  LibStub("AceConfig-3.0"):RegisterOptionsTable(AddonName, NS.AceConfig)
-  LibStub("AceConfigDialog-3.0"):AddToBlizOptions(AddonName, AddonName)
-
-  SLASH_NPT1 = AddonName
+  SLASH_NPT1 = "/nameplatetrinket"
   SLASH_NPT2 = "/npt"
 
   function SlashCmdList.NPT(message)
@@ -1712,6 +1710,8 @@ function NameplateTrinket:ADDON_LOADED(addon)
       x = NS.db.global.offsetX,
       y = NS.db.global.offsetY,
     }
+
+    NS.BuildOptions()
 
     NS.Options_Setup()
   end

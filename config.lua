@@ -80,7 +80,6 @@ local DefaultDatabase = {
     ignoreNameplateAlpha = false,
     ignoreNameplateScale = false,
     sortOrder = NS.SORT_MODE_TRINKET_INTERRUPT_OTHER,
-    frameStrata = "HIGH",
     enableGlow = true,
     showEverywhere = false,
     instanceTypes = {
