@@ -1,5 +1,14 @@
 # Nameplate Trinket
 
+## [v2.1.10](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.10) (2024-12-20)
+
+- Fixing nameplate strata and level
+- Drag and Click control updates to ensure click through when hidden or locked
+- Fixing font dropdown list
+- Updating font size range
+- Minor Cleanup
+- Update toc
+
 ## [v2.1.9](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.9) (2024-12-12)
 
 - Ensuring when you change the offsets that it applies everywhere immediately and stays even if you don't reload

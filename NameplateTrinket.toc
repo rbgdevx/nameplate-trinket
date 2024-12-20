@@ -1,9 +1,9 @@
-## Interface: 110005
+## Interface: 110007
 ## Title: NameplateTrinket
-## Version: 2.1.9
+## Version: 2.1.10
 ## Author: RBGDEV
 ## Notes: Tracks trinket and other cc breaking spells on nameplates
-## OptionalDeps: Ace3, LibStub
+## OptionalDeps: AceConfig-3.0, AceGUI-3.0, CallbackHandler-1.0, LibStub
 ## SavedVariables: NameplateTrinketDB
 ## X-Category: Buffs, Combat, Battlegrounds/PvP
 ## X-License: All Rights Reserved

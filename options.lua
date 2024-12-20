@@ -630,13 +630,13 @@ NS.MakeOption = function(spellId, spellInfo, index)
           return NS.hasErrors(SPELL_ID)
         end,
         get = function(info)
-          return NS.db[info[1]][info[2]] and NS.db[info[1]][info[2]][info[3]] or false
+          return NS.db[info[1]][info[2]][info[3]]
         end,
         set = function(info, value)
           local hasErrors = NS.hasErrors(SPELL_ID)
 
           if value and not hasErrors then
-            NS.db[info[1]][info[2]][info[3]] = value
+            NS.db[info[1]][info[2]][info[3]] = true
 
             if value and tonumber(NS.db.spells[SPELL_ID].cooldown) > 0 then
               color = "|cFF00FF00" --green
@@ -653,10 +653,12 @@ NS.MakeOption = function(spellId, spellInfo, index)
           else
             NS.db[info[1]][info[2]][info[3]] = false
 
-            NS.AceConfig.args.spells.args[SPELL_ID].name = "|cFFFF0000" .. spellName
-            if NS.AceConfig.args.spells.args[SPELL_ID].args.enabledError then
-              NS.AceConfig.args.spells.args[SPELL_ID].args.enabledError.name = "|cFFFF0000"
-                .. " Correct any errors below before you can enable this spell"
+            if hasErrors then
+              NS.AceConfig.args.spells.args[SPELL_ID].name = "|cFFFF0000" .. spellName
+              if NS.AceConfig.args.spells.args[SPELL_ID].args.enabledError then
+                NS.AceConfig.args.spells.args[SPELL_ID].args.enabledError.name = "|cFFFF0000"
+                  .. " Correct any errors below before you can enable this spell"
+              end
             end
           end
 
