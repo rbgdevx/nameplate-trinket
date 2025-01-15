@@ -79,7 +79,7 @@ local AceConfig = {
           end,
         },
         showSelf = {
-          name = "Show on yourself",
+          name = "Show on Self",
           desc = "Show on your nameplate",
           type = "toggle",
           width = "full",
@@ -106,12 +106,26 @@ local AceConfig = {
             return NS.db.global.showOnAllies
           end,
         },
+        showOnEnemies = {
+          name = "Show on Enemies",
+          desc = "Shows on enemy nameplates",
+          type = "toggle",
+          width = "full",
+          order = 6,
+          set = function(_, val)
+            NS.db.global.showOnEnemies = val
+            NS.OnDbChanged()
+          end,
+          get = function(_)
+            return NS.db.global.showOnEnemies
+          end,
+        },
         ignoreNameplateAlpha = {
           name = "Ignore Nameplate Alpha",
           desc = "Turning this off keeps the icons fully visible even when the nameplate fades out.",
           type = "toggle",
           width = "full",
-          order = 6,
+          order = 7,
           set = function(_, val)
             NS.db.global.ignoreNameplateAlpha = val
             NS.OnDbChanged()
@@ -125,7 +139,7 @@ local AceConfig = {
           desc = "Turning this off keeps the icons at the size you set even when the nameplate gets bigger or smaller.",
           type = "toggle",
           width = "full",
-          order = 7,
+          order = 8,
           set = function(_, val)
             NS.db.global.ignoreNameplateScale = val
             NS.OnDbChanged()
@@ -139,7 +153,7 @@ local AceConfig = {
           desc = "Shows a yellow glow around trinket icons.",
           type = "toggle",
           width = "full",
-          order = 8,
+          order = 9,
           set = function(_, val)
             NS.db.global.enableGlow = val
             NS.OnDbChanged()
@@ -148,53 +162,17 @@ local AceConfig = {
             return NS.db.global.enableGlow
           end,
         },
-        showEverywhere = {
-          name = "Enable for all content types",
-          desc = "Enabling this feature will show icons for any instance type.",
-          type = "toggle",
-          width = "full",
-          order = 9,
-          set = function(_, val)
-            NS.db.global.showEverywhere = val
-            NS.OnDbChanged()
-          end,
-          get = function(_)
-            return NS.db.global.showEverywhere
-          end,
-        },
         enableGroup = {
-          name = "Choose what content icons should show in.",
+          name = "Choose what content icons should show in:",
           type = "group",
           inline = true,
           order = 10,
-          disabled = function(info)
-            return info[2] and NS.db.global.showEverywhere
-          end,
           args = {
-            none = {
-              name = "Open World",
-              type = "toggle",
-              width = "double",
-              order = 1,
-              disabled = function(info)
-                return info[2] and NS.db.global.showEverywhere
-              end,
-              set = function(_, val)
-                NS.db.global.instanceTypes.none = val
-                NS.OnDbChanged()
-              end,
-              get = function(_)
-                return NS.db.global.instanceTypes.none
-              end,
-            },
             arena = {
               name = "Arena",
               type = "toggle",
               width = "double",
-              order = 2,
-              disabled = function(info)
-                return info[2] and NS.db.global.showEverywhere
-              end,
+              order = 1,
               set = function(_, val)
                 NS.db.global.instanceTypes.arena = val
                 NS.OnDbChanged()
@@ -207,10 +185,7 @@ local AceConfig = {
               name = "Battlegrounds",
               type = "toggle",
               width = "double",
-              order = 3,
-              disabled = function(info)
-                return info[2] and NS.db.global.showEverywhere
-              end,
+              order = 2,
               set = function(_, val)
                 NS.db.global.instanceTypes.pvp = val
                 NS.OnDbChanged()
@@ -219,69 +194,17 @@ local AceConfig = {
                 return NS.db.global.instanceTypes.pvp
               end,
             },
-            raid = {
-              name = "Raids",
+            none = {
+              name = "Outdoors",
               type = "toggle",
               width = "double",
-              order = 4,
-              disabled = function(info)
-                return info[2] and NS.db.global.showEverywhere
-              end,
+              order = 3,
               set = function(_, val)
-                NS.db.global.instanceTypes.raid = val
+                NS.db.global.instanceTypes.none = val
                 NS.OnDbChanged()
               end,
               get = function(_)
-                return NS.db.global.instanceTypes.raid
-              end,
-            },
-            party = {
-              name = "Dungeons",
-              type = "toggle",
-              width = "double",
-              order = 5,
-              disabled = function(info)
-                return info[2] and NS.db.global.showEverywhere
-              end,
-              set = function(_, val)
-                NS.db.global.instanceTypes.party = val
-                NS.OnDbChanged()
-              end,
-              get = function(_)
-                return NS.db.global.instanceTypes.party
-              end,
-            },
-            scenario = {
-              name = "Scenarios",
-              type = "toggle",
-              width = "double",
-              order = 6,
-              disabled = function(info)
-                return info[2] and NS.db.global.showEverywhere
-              end,
-              set = function(_, val)
-                NS.db.global.instanceTypes.scenario = val
-                NS.OnDbChanged()
-              end,
-              get = function(_)
-                return NS.db.global.instanceTypes.scenario
-              end,
-            },
-            unknown = {
-              name = "Unknown Instances",
-              desc = "Show when the instance type is unknown or returns nil.",
-              type = "toggle",
-              width = "double",
-              order = 7,
-              disabled = function(info)
-                return info[2] and NS.db.global.showEverywhere
-              end,
-              set = function(_, val)
-                NS.db.global.instanceTypes.unknown = val
-                NS.OnDbChanged()
-              end,
-              get = function(_)
-                return NS.db.global.instanceTypes.unknown
+                return NS.db.global.instanceTypes.none
               end,
             },
           },
@@ -469,6 +392,7 @@ local AceConfig = {
           step = 1,
           set = function(_, val)
             NS.db.global.offsetX = val
+            --- @class OFFSET
             NS.OFFSET.x = val
             NS.OnDbChanged()
           end,
@@ -488,6 +412,7 @@ local AceConfig = {
           step = 1,
           set = function(_, val)
             NS.db.global.offsetY = val
+            --- @class OFFSET
             NS.OFFSET.y = val
             NS.OnDbChanged()
           end,
@@ -532,13 +457,15 @@ local AceConfig = {
                     NS.AceConfig.args.spells.args.addSpellError.name = "|cFF00FF00"
                       .. spellInfo.name
                       .. " Added! Now you need to enter a cooldown for it."
-                    NS.db.spells[tostring(spellInfo.spellID)] = {
+
+                    local spellDescription = GetSpellDescription(spellInfo.spellID)
+                    NS.db.spells[spellInfo.spellID] = {
                       cooldown = 0,
                       enabled = false,
                       spellId = spellInfo.spellID,
                       spellIcon = spellInfo.iconID,
                       spellName = spellInfo.name,
-                      spellDescription = GetSpellDescription(spellInfo.spellID) or "",
+                      spellDescription = spellDescription or "",
                     }
                     NS.RebuildOptions()
                     NS.OnDbChanged()
@@ -551,13 +478,15 @@ local AceConfig = {
                     NS.AceConfig.args.spells.args.addSpellError.name = "|cFF00FF00"
                       .. spellInfo.name
                       .. " Added! Now you need to enter a cooldown for it."
-                    NS.db.spells[tostring(spellInfo.spellID)] = {
+
+                    local spellDescription = GetSpellDescription(spellInfo.spellID)
+                    NS.db.spells[spellInfo.spellID] = {
                       cooldown = 0,
                       enabled = false,
                       spellId = spellInfo.spellID,
                       spellIcon = spellInfo.iconID,
                       spellName = spellInfo.name,
-                      spellDescription = GetSpellDescription(spellInfo.spellID) or "",
+                      spellDescription = spellDescription or "",
                     }
                     NS.RebuildOptions()
                     NS.OnDbChanged()
@@ -584,13 +513,17 @@ local AceConfig = {
 }
 NS.AceConfig = AceConfig
 
-NS.hasErrors = function(SPELL_ID)
+--- @type fun(spellId: number): boolean
+NS.hasErrors = function(spellId)
   if NS.db then
-    local cooldownValid = NS.db.spells[SPELL_ID].cooldown
-      and tonumber(NS.db.spells[SPELL_ID].cooldown)
-      and tonumber(NS.db.spells[SPELL_ID].cooldown) > 0
-    local spellIdValid = NS.db.spells[SPELL_ID].spellId and tonumber(NS.db.spells[SPELL_ID].spellId)
-    local spellIconValid = NS.db.spells[SPELL_ID].spellIcon and tonumber(NS.db.spells[SPELL_ID].spellIcon)
+    --- @type boolean
+    local cooldownValid = NS.db.spells[spellId].cooldown ~= nil
+      and tonumber(NS.db.spells[spellId].cooldown) ~= nil
+      and tonumber(NS.db.spells[spellId].cooldown) > 0
+    --- @type boolean
+    local spellIdValid = NS.db.spells[spellId].spellId ~= nil and tonumber(NS.db.spells[spellId].spellId) ~= nil
+    --- @type boolean
+    local spellIconValid = NS.db.spells[spellId].spellIcon ~= nil and tonumber(NS.db.spells[spellId].spellIcon) ~= nil
 
     return not cooldownValid or not spellIdValid or not spellIconValid
   end
@@ -598,11 +531,13 @@ NS.hasErrors = function(SPELL_ID)
   return false
 end
 
+--- @type fun(spellId: number, spellInfo: MySpellInfo, index: integer)
 NS.MakeOption = function(spellId, spellInfo, index)
   local spellName = spellInfo.spellName
   local spellIcon = spellInfo.spellIcon
   local spellDescription = spellInfo.spellDescription
-  local spellCooldown = tonumber(spellInfo.cooldown)
+  local spellCooldown = spellInfo.cooldown
+  local spellID = spellInfo.spellId
   local SPELL_ID = tostring(spellId)
 
   local color = ""
@@ -627,34 +562,34 @@ NS.MakeOption = function(spellId, spellInfo, index)
         width = "full",
         order = 1,
         disabled = function()
-          return NS.hasErrors(SPELL_ID)
+          return NS.hasErrors(spellId)
         end,
         get = function(info)
-          return NS.db[info[1]][info[2]][info[3]]
+          return NS.db[info[1]][tonumber(info[2])] and NS.db[info[1]][tonumber(info[2])][info[3]] or spellInfo.enabled
         end,
         set = function(info, value)
-          local hasErrors = NS.hasErrors(SPELL_ID)
+          local hasErrors = NS.hasErrors(spellId)
+
+          if value and tonumber(NS.db.spells[spellId].cooldown) > 0 then
+            color = "|cFF00FF00" --green
+          elseif not value then
+            color = "|cFFFF0000" --red
+          elseif value and tonumber(NS.db.spells[spellId].cooldown) <= 0 then
+            color = "|cFFFFFF00" --yellow
+          end
+
+          NS.AceConfig.args.spells.args[SPELL_ID].name = color .. spellName
 
           if value and not hasErrors then
-            NS.db[info[1]][info[2]][info[3]] = true
+            NS.db[info[1]][tonumber(info[2])][info[3]] = true
 
-            if value and tonumber(NS.db.spells[SPELL_ID].cooldown) > 0 then
-              color = "|cFF00FF00" --green
-            elseif not value then
-              color = "|cFFFF0000" --red
-            elseif value and tonumber(NS.db.spells[SPELL_ID].cooldown) <= 0 then
-              color = "|cFFFFFF00" --yellow
-            end
-
-            NS.AceConfig.args.spells.args[SPELL_ID].name = color .. spellName
             if NS.AceConfig.args.spells.args[SPELL_ID].args.enabledError then
               NS.AceConfig.args.spells.args[SPELL_ID].args.enabledError.name = ""
             end
           else
-            NS.db[info[1]][info[2]][info[3]] = false
+            NS.db[info[1]][tonumber(info[2])][info[3]] = false
 
             if hasErrors then
-              NS.AceConfig.args.spells.args[SPELL_ID].name = "|cFFFF0000" .. spellName
               if NS.AceConfig.args.spells.args[SPELL_ID].args.enabledError then
                 NS.AceConfig.args.spells.args[SPELL_ID].args.enabledError.name = "|cFFFF0000"
                   .. " Correct any errors below before you can enable this spell"
@@ -668,7 +603,7 @@ NS.MakeOption = function(spellId, spellInfo, index)
       enabledError = {
         order = 2,
         type = "description",
-        name = NS.hasErrors(SPELL_ID) and "|cFFFF0000" .. " Correct any errors below before you can enable this spell"
+        name = NS.hasErrors(spellId) and "|cFFFF0000" .. " Correct any errors below before you can enable this spell"
           or "",
         width = "double",
       },
@@ -677,13 +612,14 @@ NS.MakeOption = function(spellId, spellInfo, index)
         type = "input",
         name = "Spell ID",
         get = function(info)
-          return NS.db[info[1]][info[2]] and tostring(NS.db[info[1]][info[2]][info[3]]) or ""
+          return NS.db[info[1]][tonumber(info[2])] and tostring(NS.db[info[1]][tonumber(info[2])][info[3]])
+            or tostring(spellID)
         end,
         set = function(info, value)
           if spellId then
             local checkedSpellInfo = GetSpellInfo(spellId)
             if checkedSpellInfo then
-              NS.db[info[1]][info[2]][info[3]] = spellId
+              NS.db[info[1]][tonumber(info[2])][info[3]] = spellId
 
               NS.AceConfig.args.spells.args[SPELL_ID].args.spellIdError.name = ""
 
@@ -698,7 +634,7 @@ NS.MakeOption = function(spellId, spellInfo, index)
             else
               local checkedSpellInfo = GetSpellInfo(value)
               if checkedSpellInfo then
-                NS.db[info[1]][info[2]][info[3]] = spellId
+                NS.db[info[1]][tonumber(info[2])][info[3]] = spellId
 
                 NS.AceConfig.args.spells.args[SPELL_ID].args.spellIdError.name = ""
 
@@ -728,14 +664,15 @@ NS.MakeOption = function(spellId, spellInfo, index)
         name = "Cooldown",
         desc = "Cooldown time in seconds",
         get = function(info)
-          return NS.db[info[1]][info[2]] and tostring(NS.db[info[1]][info[2]][info[3]]) or ""
+          return NS.db[info[1]][tonumber(info[2])] and tostring(NS.db[info[1]][tonumber(info[2])][info[3]])
+            or tostring(spellCooldown)
         end,
         set = function(info, value)
           local cooldownValue = tonumber(value)
 
           if cooldownValue then
             if cooldownValue > 0 then
-              NS.db[info[1]][info[2]][info[3]] = value
+              NS.db[info[1]][tonumber(info[2])][info[3]] = value
 
               NS.AceConfig.args.spells.args[SPELL_ID].args.cooldownError.name = ""
               NS.AceConfig.args.spells.args[SPELL_ID].args.enabledError.name = ""
@@ -746,11 +683,11 @@ NS.MakeOption = function(spellId, spellInfo, index)
                 .. " Must be greater than 0"
             end
 
-            if NS.db[info[1]][info[2]].enabled and cooldownValue > 0 then
+            if NS.db[info[1]][tonumber(info[2])].enabled and cooldownValue > 0 then
               color = "|cFF00FF00" --green
-            elseif not NS.db[info[1]][info[2]].enabled then
+            elseif not NS.db[info[1]][tonumber(info[2])].enabled then
               color = "|cFFFF0000" --red
-            elseif NS.db[info[1]][info[2]].enabled and cooldownValue <= 0 then
+            elseif NS.db[info[1]][tonumber(info[2])].enabled and cooldownValue <= 0 then
               color = "|cFFFFFF00" --yellow
             end
 
@@ -782,7 +719,8 @@ NS.MakeOption = function(spellId, spellInfo, index)
         type = "input",
         name = "Spell Icon ID",
         get = function(info)
-          return NS.db[info[1]][info[2]] and tostring(NS.db[info[1]][info[2]][info[3]]) or ""
+          return NS.db[info[1]][tonumber(info[2])] and tostring(NS.db[info[1]][tonumber(info[2])][info[3]])
+            or tostring(spellIcon)
         end,
         set = function(info, value)
           local iconValue = tonumber(value)
@@ -799,7 +737,7 @@ NS.MakeOption = function(spellId, spellInfo, index)
               end
 
               if TextureExists(iconValue) then
-                NS.db[info[1]][info[2]][info[3]] = iconValue
+                NS.db[info[1]][tonumber(info[2])][info[3]] = iconValue
 
                 t:Hide()
                 f:Hide()
@@ -841,7 +779,7 @@ NS.MakeOption = function(spellId, spellInfo, index)
         type = "description",
         name = " ",
         image = function(info)
-          return NS.db[info[1]][info[2]] and NS.db[info[1]][info[2]].spellIcon or spellIcon
+          return NS.db[info[1]][tonumber(info[2])] and NS.db[info[1]][tonumber(info[2])].spellIcon or spellIcon
         end,
         imageHeight = 100,
         imageWidth = 100,
@@ -861,7 +799,7 @@ NS.MakeOption = function(spellId, spellInfo, index)
         func = function()
           NS.AceConfig.args.spells.args[SPELL_ID].args.spellImage.image = nil
           NS.AceConfig.args.spells.args[SPELL_ID] = nil
-          NS.db.spells[SPELL_ID] = nil
+          NS.db.spells[spellId] = nil
           NameplateTrinketDB = NS.db
 
           NS.RebuildOptions()
@@ -904,8 +842,10 @@ end
 -- end
 
 NS.BuildOptions = function()
+  --- @type table<number, MySpellInfo>
   local buildList = {}
   for spellId, spellInfo in pairs(NS.db.spells) do
+    --- @type table<number, MySpellInfo>
     local spell = {
       [spellId] = spellInfo,
     }
@@ -916,6 +856,7 @@ NS.BuildOptions = function()
   for i = 1, #buildList do
     local spell = buildList[i]
     if spell then
+      --- @type number, MySpellInfo
       local spellId, spellInfo = next(spell)
       NS.MakeOption(spellId, spellInfo, i)
     end

@@ -17,6 +17,9 @@ local slen = string.len
 
 local GetSpellTexture = C_Spell.GetSpellTexture
 
+--- @type integer
+local SPELL_PVPTRINKET = NS.SPELL_PVPTRINKET
+
 NS.trimToEmpty = function(str)
   -- Replace all whitespace characters with an empty string
   local trimmed = sgsub(str, "%s+", "")
@@ -53,7 +56,7 @@ NS.IterateGroupMembers = function(reversed, forceParty)
   end
 end
 
-function NS.deepcopy(object)
+function NS.DeepCopy(object)
   local lookup_table = {}
   local function _copy(another_object)
     if type(another_object) ~= "table" then
@@ -71,17 +74,49 @@ function NS.deepcopy(object)
   return _copy(object)
 end
 
+--- @type table<integer, integer>
 NS.SpellTextureByID = setmetatable({
-  [NS.SPELL_PVPTRINKET] = 1322720,
+  [SPELL_PVPTRINKET] = 1322720,
   [42292] = 1322720,
   [200166] = 1247262,
 }, {
+  --- @param t table<integer, integer>
+  --- @param key integer
+  --- @return integer
   __index = function(t, key)
     local texture = GetSpellTexture(key)
     t[key] = texture
     return texture
   end,
 })
+
+--- @type fun(a: Database)
+NS.MigrateDB = function(db)
+  if db.migrated ~= nil and db.migrated == true then
+    return
+  end
+
+  local spells = db.spells
+  local updatedSpells = {}
+
+  for key, value in pairs(spells) do
+    -- Check if the key is a string and convert it to a number if possible
+    if type(key) == "string" then
+      local numericKey = tonumber(key)
+      if numericKey then
+        updatedSpells[numericKey] = value
+      else
+        updatedSpells[key] = value -- Keep it as-is if it can't be converted
+      end
+    else
+      updatedSpells[key] = value -- Preserve numeric keys
+    end
+  end
+
+  -- Replace the old spells table with the updated one
+  db.spells = updatedSpells
+  db.migrated = true
+end
 
 -- Copies table values from src to dst if they don't exist in dst
 NS.CopyDefaults = function(src, dst)
@@ -133,11 +168,11 @@ NS.CopyTable = function(src, dest)
 end
 
 -- Cleanup savedvariables by removing table values in src that no longer
--- exists in table dst (default settings)
+-- exists in table dst (default database)
 NS.CleanupDB = function(src, dst)
   for key, value in pairs(src) do
     if dst[key] == nil then
-      -- HACK: offsetsXY are not set in DEFAULT_SETTINGS but sat on demand instead to save memory,
+      -- HACK: offsetsXY are not set in DefaultDatabase but sat on demand instead to save memory,
       -- which causes nil comparison to always be true here, so always ignore these for now
       if key ~= "version" then
         src[key] = nil
@@ -149,27 +184,4 @@ NS.CleanupDB = function(src, dst)
     end
   end
   return dst
-end
-
--- Pool for reusing tables. (Garbage collector isn't ran in combat unless max garbage is reached, which causes fps drops)
-do
-  local pool = {}
-
-  NS.NewTable = function()
-    local t = next(pool) or {}
-    pool[t] = nil -- remove from pool
-    return t
-  end
-
-  NS.RemoveTable = function(tbl)
-    if tbl then
-      pool[twipe(tbl)] = true -- add to pool, wipe returns pointer to tbl here
-    end
-  end
-
-  NS.ReleaseTables = function()
-    if next(pool) then
-      pool = {}
-    end
-  end
 end

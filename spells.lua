@@ -1,5 +1,6 @@
 local _, NS = ...
 
+--- @type table<string, MyCooldown>
 NS.CDs = {
   ["Trinket"] = {
     [42292] = 120, -- PvP Trinket -- https://www.wowhead.com/spell=42292/pvp-trinket
@@ -37,6 +38,7 @@ NS.CDs = {
   },
 }
 
+--- @type table<number, boolean>
 NS.Interrupts = {
   [47528] = true, -- // Mind Freeze
   [106839] = true, -- // Skull Bash
@@ -59,6 +61,7 @@ NS.Interrupts = {
   [147362] = true, -- Counter Shot
 }
 
+--- @type table<number, boolean>
 NS.Trinkets = {
   [59752] = true,
   [7744] = true,

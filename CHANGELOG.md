@@ -1,5 +1,16 @@
 # Nameplate Trinket
 
+## [v2.1.11](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.11) (2024-01-14)
+
+- Fixing visibility control for which zones you want this to show in
+- Reducing zone control down to pvp and world pvp since nameplate ui changes basically don't work in PVE nor would you need this addon for pve
+- Fixing the healer reduction on pvp trinkets due to key type into the spells db
+- Converting all spell keys to be number based since in all api responses the spell ids are numbers
+- Added a db migration tool to migrate old spell string keys to number keys
+- Added type checking to ensure i was covering areas correctly
+- backend updates from type checking
+- Added option to control enemy visibility so now you can control friendly and enemies, not just friendly
+
 ## [v2.1.10](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.10) (2024-12-20)
 
 - Fixing nameplate strata and level

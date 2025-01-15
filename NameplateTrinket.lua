@@ -23,7 +23,7 @@ local LibStub = LibStub
 local next = next
 local CombatLogGetCurrentEventInfo = CombatLogGetCurrentEventInfo
 local select = select
-local tostring = tostring
+-- local tostring = tostring
 local tonumber = tonumber
 local print = print
 
@@ -48,13 +48,17 @@ local GetUnitTooltip = C_TooltipInfo.GetUnit
 local AceConfig = LibStub("AceConfig-3.0")
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
 
+--- @type table<integer, integer>
 local SpellTextureByID = NS.SpellTextureByID
+--- @type table<number, boolean>
 local Interrupts = NS.Interrupts
+--- @type table<number, boolean>
 local Trinkets = NS.Trinkets
 
 local NameplateTrinket = {}
 NS.NameplateTrinket = NameplateTrinket
 
+--- @type AllCooldowns
 AllCooldowns = NS.AllCooldowns
 
 local NameplateTrinketFrame = CreateFrame("Frame", AddonName .. "Frame")
@@ -65,6 +69,7 @@ NameplateTrinketFrame:SetScript("OnEvent", function(_, event, ...)
 end)
 NameplateTrinketFrame.TestModeActive = false
 NameplateTrinketFrame.wasOnLoadingScreen = true
+--- @type nil | "unknown" | "none" | "pvp" | "arena" | "party" | "raid" | "scenario"
 NameplateTrinketFrame.instanceType = nil
 NameplateTrinketFrame.inArena = false
 NameplateTrinketFrame.loaded = false
@@ -73,15 +78,25 @@ NS.NameplateTrinket.frame = NameplateTrinketFrame
 
 local COMBATLOG_OBJECT_TYPE_PLAYER = COMBATLOG_OBJECT_TYPE_PLAYER
 local COMBATLOG_OBJECT_REACTION_HOSTILE = COMBATLOG_OBJECT_REACTION_HOSTILE
+--- @type integer
 local SPELL_PVPTRINKET = NS.SPELL_PVPTRINKET
+--- @type integer
 local SPELL_PVPADAPTATION = NS.SPELL_PVPADAPTATION
+--- @type integer
 local SPELL_RESET = NS.SPELL_RESET
+--- @type "left"
 local ICON_GROW_DIRECTION_LEFT = NS.ICON_GROW_DIRECTION_LEFT
+--- @type "right"
 local ICON_GROW_DIRECTION_RIGHT = NS.ICON_GROW_DIRECTION_RIGHT
+--- @type "none"
 local SORT_MODE_NONE = NS.SORT_MODE_NONE
+--- @type "trinket-interrupt-other"
 local SORT_MODE_TRINKET_INTERRUPT_OTHER = NS.SORT_MODE_TRINKET_INTERRUPT_OTHER
+--- @type "interrupt-trinket-other"
 local SORT_MODE_INTERRUPT_TRINKET_OTHER = NS.SORT_MODE_INTERRUPT_TRINKET_OTHER
+--- @type "trinket-other"
 local SORT_MODE_TRINKET_OTHER = NS.SORT_MODE_TRINKET_OTHER
+--- @type "interrupt-other"
 local SORT_MODE_INTERRUPT_OTHER = NS.SORT_MODE_INTERRUPT_OTHER
 local MinCdDuration = 0
 local MaxCdDuration = 10 * 3600
@@ -558,17 +573,19 @@ local function SetTestCooldown(icon, remainingTime, started, cooldownLength, isA
 end
 
 function CreateIcon(nameplate, spellId, index)
-  local iconFrame =
-    CreateFrame("Frame", AddonName .. "IconFrame" .. "Spell" .. spellId .. "Index" .. index, nameplate.nptIconFrame)
   local icon = {}
+
   icon.spellId = spellId
 
+  local iconFrame =
+    CreateFrame("Frame", AddonName .. "IconFrame" .. "Spell" .. spellId .. "Index" .. index, nameplate.nptIconFrame)
   iconFrame:SetWidth(NS.db.global.iconSize)
   iconFrame:SetHeight(NS.db.global.iconSize)
   iconFrame:SetAlpha(NS.db.global.iconAlpha)
-  icon.frame = iconFrame
-  PlaceIcon(nameplate, icon)
   iconFrame:Hide()
+  icon.frame = iconFrame
+
+  PlaceIcon(nameplate, icon)
 
   icon.cooldownFrame = CreateFrame("Cooldown", nil, iconFrame, "CooldownFrameTemplate")
   icon.cooldownFrame:SetAllPoints(iconFrame)
@@ -592,9 +609,10 @@ function CreateIcon(nameplate, spellId, index)
     local timerScale = NS.db.global.iconSize - NS.db.global.iconSize / 2
     local timerTextSize = mceil(timerScale)
 
-    icon.cooldownText = icon.frame:CreateFontString(nil, "OVERLAY")
+    icon.cooldownText = iconFrame:CreateFontString(nil, "OVERLAY")
     icon.cooldownText:SetTextColor(0.7, 1, 0, 1)
-    icon.cooldownText:SetPoint("CENTER", icon.frame, "CENTER", 0, 0)
+    icon.cooldownText:SetPoint("CENTER", iconFrame, "CENTER", 0, 0)
+
     if TimerTextUseRelativeScale then
       icon.cooldownText:SetFont("Fonts\\FRIZQT__.TTF", mceil(timerScale * fontScale), "OUTLINE")
     else
@@ -609,20 +627,22 @@ function CreateIcon(nameplate, spellId, index)
 end
 
 function CreateTestIcon(nameplate, spellId, index)
+  local icon = {}
+
+  icon.spellId = spellId
+
   local iconFrame = CreateFrame(
     "Frame",
     AddonName .. "TestIconFrame" .. "Spell" .. spellId .. "Index" .. index,
     nameplate.nptTestIconFrame
   )
-  local icon = {}
-  icon.spellId = spellId
-
   iconFrame:SetWidth(NS.db.global.iconSize)
   iconFrame:SetHeight(NS.db.global.iconSize)
   iconFrame:SetAlpha(NS.db.global.iconAlpha)
-  icon.frame = iconFrame
-  PlaceTestIcon(nameplate, icon)
   iconFrame:Hide()
+  icon.frame = iconFrame
+
+  PlaceTestIcon(nameplate, icon)
 
   icon.cooldownFrame = CreateFrame("Cooldown", nil, iconFrame, "CooldownFrameTemplate")
   icon.cooldownFrame:SetAllPoints(iconFrame)
@@ -646,9 +666,10 @@ function CreateTestIcon(nameplate, spellId, index)
     local timerScale = NS.db.global.iconSize - NS.db.global.iconSize / 2
     local timerTextSize = mceil(timerScale)
 
-    icon.cooldownText = icon.frame:CreateFontString(nil, "OVERLAY")
+    icon.cooldownText = iconFrame:CreateFontString(nil, "OVERLAY")
     icon.cooldownText:SetTextColor(0.7, 1, 0, 1)
-    icon.cooldownText:SetPoint("CENTER", icon.frame, "CENTER", 0, 0)
+    icon.cooldownText:SetPoint("CENTER", iconFrame, "CENTER", 0, 0)
+
     if TimerTextUseRelativeScale then
       icon.cooldownText:SetFont("Fonts\\FRIZQT__.TTF", mceil(timerScale * fontScale), "OUTLINE")
     else
@@ -697,7 +718,7 @@ local function addIcons(nameplate, guid)
       if InverseLogic then
         isActive = not isActive
       end
-      local dbInfo = NS.db.spells[tostring(spellId)]
+      local dbInfo = NS.db.spells[spellId]
       local remainingTime = spellInfo.expires - currentTime
       if FilterSpell(dbInfo, remainingTime, isActive) then
         if counter > nameplate.nptIconCount then
@@ -741,7 +762,7 @@ local function addTestIcons(nameplate, guid)
       if InverseLogic then
         isActive = not isActive
       end
-      local dbInfo = NS.db.spells[tostring(spellId)]
+      local dbInfo = NS.db.spells[spellId]
       -- We create a copy of dbInfo to avoid modifying the users settings just for testing
       local dbInfoCopy
       if not dbInfo then
@@ -802,13 +823,16 @@ local function addNameplateIcons(nameplate, guid)
   local isNpc = not isPlayer
   local isSelf = UnitIsUnit(unit, "player")
   local isFriend = UnitIsFriend("player", unit)
-  -- local isEnemy = UnitIsEnemy("player", unit)
+  local isEnemy = UnitIsEnemy("player", unit)
   -- local canAttack = UnitCanAttack("player", unit)
   -- local isHealer = (NS.isHealer("player") or Healers[guid]) and true or false
   local isDeadOrGhost = UnitIsDeadOrGhost(unit)
   local isAlive = not isDeadOrGhost
   local isTarget = UnitIsUnit(unit, "target")
   local targetExists = UnitExists("target")
+  local isArena = NameplateTrinketFrame.instanceType == "arena"
+  local isBattleground = NameplateTrinketFrame.instanceType == "pvp"
+  local isOutdoors = NameplateTrinketFrame.instanceType == "none" or not IsInInstance()
 
   --[[
   -- local r = UnitReaction("player", unit)
@@ -825,13 +849,31 @@ local function addNameplateIcons(nameplate, guid)
   local hideDead = not isAlive
   local hideNonTargets = NS.db.global.targetOnly and (not targetExists or not targetIsUnit)
   local hideAllies = not NS.db.global.showOnAllies and isFriend
+  local hideEnemies = not NS.db.global.showOnEnemies and isEnemy
   local hideOnSelf = not NS.db.global.showSelf and isSelf
-  local hideInstanceTypes = not NS.db.global.showEverywhere
-    and not NS.INSTANCE_TYPES[NameplateTrinketFrame.instanceType]
   local hideNPCs = isNpc
-  local hideDuringTestMode = NS.db.global.test and not IsInInstance()
+
+  local hideOutsideArena = not NS.db.global.instanceTypes.arena and isArena
+  local hideOutsideBattleground = not NS.db.global.instanceTypes.pvp and isBattleground
+  local hideOutside = not NS.db.global.instanceTypes.none and isOutdoors
+  local hideLocation = true
+  if isArena then
+    hideLocation = hideOutsideArena
+  elseif isBattleground then
+    hideLocation = hideOutsideBattleground
+  elseif isOutdoors then
+    hideLocation = hideOutside
+  end
+
+  local hideDuringTestMode = NS.db.global.test
   local hideIcons = hideDuringTestMode
-    and (hideNPCs or hideOnSelf or hideDead or hideAllies or hideNonTargets or hideInstanceTypes)
+    or hideNPCs
+    or hideOnSelf
+    or hideDead
+    or hideAllies
+    or hideEnemies
+    or hideNonTargets
+    or hideLocation
 
   if hideIcons then
     if nameplate.nptIconFrame then
@@ -877,13 +919,16 @@ local function addNameplateTestIcons(nameplate, guid)
   local isNpc = not isPlayer
   local isSelf = UnitIsUnit(unit, "player")
   local isFriend = UnitIsFriend("player", unit)
-  -- local isEnemy = UnitIsEnemy("player", unit)
+  local isEnemy = UnitIsEnemy("player", unit)
   -- local canAttack = UnitCanAttack("player", unit)
   -- local isHealer = (NS.isHealer("player") or Healers[guid]) and true or false
   local isDeadOrGhost = UnitIsDeadOrGhost(unit)
   local isAlive = not isDeadOrGhost
   local isTarget = UnitIsUnit(unit, "target")
   local targetExists = UnitExists("target")
+  local isArena = NameplateTrinketFrame.instanceType == "arena"
+  local isBattleground = NameplateTrinketFrame.instanceType == "pvp"
+  local isOutdoors = NameplateTrinketFrame.instanceType == "none" or not IsInInstance()
 
   --[[
   -- local r = UnitReaction("player", unit)
@@ -900,13 +945,25 @@ local function addNameplateTestIcons(nameplate, guid)
   local hideDead = not isAlive
   local hideNonTargets = NS.db.global.targetOnly and (not targetExists or not targetIsUnit)
   local hideAllies = not NS.db.global.showOnAllies and isFriend
+  local hideEnemies = not NS.db.global.showOnEnemies and isEnemy
   local hideOnSelf = not NS.db.global.showSelf and isSelf
-  local hideInstanceTypes = not NS.db.global.showEverywhere
-    and not NS.INSTANCE_TYPES[NameplateTrinketFrame.instanceType]
   local hideNPCs = isNpc
-  local hideDuringTestMode = not NS.db.global.test or IsInInstance()
-  local hideIcons = hideDuringTestMode
-    and (hideNPCs or hideOnSelf or hideDead or hideAllies or hideNonTargets or hideInstanceTypes)
+
+  local hideOutsideArena = not NS.db.global.instanceTypes.arena and isArena
+  local hideOutsideBattleground = not NS.db.global.instanceTypes.pvp and isBattleground
+  local hideOutside = not NS.db.global.instanceTypes.none and isOutdoors
+  local hideLocation = true
+  if isArena then
+    hideLocation = hideOutsideArena
+  elseif isBattleground then
+    hideLocation = hideOutsideBattleground
+  elseif isOutdoors then
+    hideLocation = hideOutside
+  end
+
+  local hideOutsideTestMode = not NS.db.global.test
+  local hideIcons = hideOutsideTestMode
+    and (hideNPCs or hideOnSelf or hideDead or hideAllies or hideEnemies or hideNonTargets or hideLocation)
 
   if hideIcons then
     if nameplate.nptTestIconFrame then
@@ -962,7 +1019,7 @@ function NS.RefreshTestSpells()
         TestSpellsPerPlayerGUID[guid][SPELL_PVPTRINKET] = {
           ["spellId"] = SPELL_PVPTRINKET,
           ["expires"] = currentTime + (Healers[guid] and 90 or 120),
-          ["texture"] = NS.db.spells[tostring(SPELL_PVPTRINKET)] and NS.db.spells[tostring(SPELL_PVPTRINKET)].spellIcon
+          ["texture"] = NS.db.spells[SPELL_PVPTRINKET] and NS.db.spells[SPELL_PVPTRINKET].spellIcon
             or SpellTextureByID[SPELL_PVPTRINKET],
           ["duration"] = (Healers[guid] and 90 or 120),
           ["started"] = currentTime,
@@ -972,8 +1029,7 @@ function NS.RefreshTestSpells()
           TestSpellsPerPlayerGUID[guid][SPELL_PVPTRINKET] = {
             ["spellId"] = SPELL_PVPTRINKET,
             ["expires"] = currentTime + (Healers[guid] and 90 or 120),
-            ["texture"] = NS.db.spells[tostring(SPELL_PVPTRINKET)]
-                and NS.db.spells[tostring(SPELL_PVPTRINKET)].spellIcon
+            ["texture"] = NS.db.spells[SPELL_PVPTRINKET] and NS.db.spells[SPELL_PVPTRINKET].spellIcon
               or SpellTextureByID[SPELL_PVPTRINKET],
             ["duration"] = (Healers[guid] and 90 or 120),
             ["started"] = currentTime,
@@ -986,8 +1042,7 @@ function NS.RefreshTestSpells()
             TestSpellsPerPlayerGUID[guid][spellId] = {
               ["spellId"] = spellId,
               ["expires"] = currentTime + cd,
-              ["texture"] = NS.db.spells[tostring(spellId)] and NS.db.spells[tostring(spellId)].spellIcon
-                or SpellTextureByID[spellId],
+              ["texture"] = NS.db.spells[spellId] and NS.db.spells[spellId].spellIcon or SpellTextureByID[spellId],
               ["duration"] = cd,
               ["started"] = currentTime,
             }
@@ -996,8 +1051,7 @@ function NS.RefreshTestSpells()
               TestSpellsPerPlayerGUID[guid][spellId] = {
                 ["spellId"] = spellId,
                 ["expires"] = currentTime + cd,
-                ["texture"] = NS.db.spells[tostring(spellId)] and NS.db.spells[tostring(spellId)].spellIcon
-                  or SpellTextureByID[spellId],
+                ["texture"] = NS.db.spells[spellId] and NS.db.spells[spellId].spellIcon or SpellTextureByID[spellId],
                 ["duration"] = cd,
                 ["started"] = currentTime,
               }
@@ -1250,13 +1304,22 @@ end
 15. auraType: string
 --]]
 function NameplateTrinket:COMBAT_LOG_EVENT_UNFILTERED()
-  local hideDuringTestMode = NS.db.global.test and not IsInInstance()
-  if hideDuringTestMode then
+  if NS.db.global.test then
     return
   end
-  local hideInstanceTypes = not NS.db.global.showEverywhere
-    and not NS.INSTANCE_TYPES[NameplateTrinketFrame.instanceType]
-  if hideInstanceTypes then
+  if not NS.db.global.instanceTypes.arena and NameplateTrinketFrame.instanceType == "arena" then
+    return
+  elseif not NS.db.global.instanceTypes.pvp and NameplateTrinketFrame.instanceType == "pvp" then
+    return
+  elseif
+    not NS.db.global.instanceTypes.none and (NameplateTrinketFrame.instanceType == "none" or not IsInInstance())
+  then
+    return
+  elseif
+    NameplateTrinketFrame.instanceType == "raid"
+    or NameplateTrinketFrame.instanceType == "party"
+    or NameplateTrinketFrame.instanceType == "unknown"
+  then
     return
   end
   local _, subevent, _, sourceGUID, _, sourceFlags, _, destGUID, _, destFlags, _ = CombatLogGetCurrentEventInfo()
@@ -1292,7 +1355,7 @@ function NameplateTrinket:COMBAT_LOG_EVENT_UNFILTERED()
       end
     end
     if bband(sourceFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) ~= 0 or (NS.db.global.showOnAllies == true) then
-      local entry = NS.db.spells[tostring(spellId)]
+      local entry = NS.db.spells[spellId]
       if entry ~= nil and entry.enabled then
         local cooldown = tonumber(entry.cooldown)
         if cooldown ~= nil and cooldown > 0 then
@@ -1330,12 +1393,13 @@ function NameplateTrinket:COMBAT_LOG_EVENT_UNFILTERED()
                 existingEntry.expires = currentTime + 60
                 existingEntry.duration = currentTime + 60
               end
-            -- caster is a healer, reducing cd of pvp trinket
-            elseif
+              -- caster is a healer, reducing cd of pvp trinket
+            end
+            if
               spellId == SPELL_PVPTRINKET
               and NS.db.spells[SPELL_PVPTRINKET] ~= nil
               and NS.db.spells[SPELL_PVPTRINKET].enabled
-              and Healers[sourceGUID]
+              and Healers[sourceGUID] == true
             then
               local existingEntry = SpellsPerPlayerGUID[sourceGUID][SPELL_PVPTRINKET]
               if existingEntry then
@@ -1628,13 +1692,13 @@ function NameplateTrinket:PLAYER_LOGIN()
   NS.INSTANCE_TYPES = {
     -- nil resolves to "unknown"
     -- "unknown" - Used by a single map: Void Zone: Arathi Highlands (2695)
-    ["unknown"] = NS.db and NS.db.global.instanceTypes.unknown or NS.DefaultDatabase.global.instanceTypes.unknown, -- when in an unknown instance
+    ["unknown"] = false, -- when in an unknown instance
     ["none"] = NS.db and NS.db.global.instanceTypes.none or NS.DefaultDatabase.global.instanceTypes.none, -- when outside an instance
     ["pvp"] = NS.db and NS.db.global.instanceTypes.pvp or NS.DefaultDatabase.global.instanceTypes.pvp, --  when in a battleground
     ["arena"] = NS.db and NS.db.global.instanceTypes.arena or NS.DefaultDatabase.global.instanceTypes.arena, -- when in an arena
-    ["party"] = NS.db and NS.db.global.instanceTypes.party or NS.DefaultDatabase.global.instanceTypes.party, -- when in a 5-man instance
-    ["raid"] = NS.db and NS.db.global.instanceTypes.raid or NS.DefaultDatabase.global.instanceTypes.raid, -- when in a raid instance
-    ["scenario"] = NS.db and NS.db.global.instanceTypes.scenario or NS.DefaultDatabase.global.instanceTypes.scenario, -- when in a scenario
+    ["party"] = false, -- when in a 5-man instance
+    ["raid"] = false, -- when in a raid instance
+    ["scenario"] = false, -- when in a scenario
   }
 
   NameplateTrinketFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -1655,13 +1719,13 @@ function NS.OnDbChanged()
 
   NS.INSTANCE_TYPES = {
     -- nil resolves to "unknown"
-    ["unknown"] = NS.db.global.instanceTypes.unknown, -- when in an unknown instance
+    ["unknown"] = false, -- when in an unknown instance
     ["none"] = NS.db.global.instanceTypes.none, -- when outside an instance
     ["pvp"] = NS.db.global.instanceTypes.pvp, --  when in a battleground
     ["arena"] = NS.db.global.instanceTypes.arena, -- when in an arena
-    ["party"] = NS.db.global.instanceTypes.party, -- when in a 5-man instance
-    ["raid"] = NS.db.global.instanceTypes.raid, -- when in a raid instance
-    ["scenario"] = NS.db.global.instanceTypes.scenario, -- when in a scenario
+    ["party"] = false, -- when in a 5-man instance
+    ["raid"] = false, -- when in a raid instance
+    ["scenario"] = false, -- when in a scenario
   }
 
   ReallocateIcons(true)
@@ -1699,13 +1763,17 @@ function NameplateTrinket:ADDON_LOADED(addon)
     -- Copy any settings from default if they don't exist in current profile
     NS.CopyDefaults(NS.DefaultDatabase, NameplateTrinketDB)
 
+    NS.MigrateDB(NameplateTrinketDB)
+
     -- Reference to active db profile
     -- Always use this directly or reference will be invalid
+    --- @type Database
     NS.db = NameplateTrinketDB
 
     -- Remove table values no longer found in default settings
     NS.CleanupDB(NameplateTrinketDB, NS.DefaultDatabase)
 
+    --- @class OFFSET
     NS.OFFSET = {
       x = NS.db.global.offsetX,
       y = NS.db.global.offsetY,
