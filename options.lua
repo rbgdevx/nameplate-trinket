@@ -93,8 +93,8 @@ local AceConfig = {
           end,
         },
         showOnAllies = {
-          name = "Show on Allies",
-          desc = "Shows on friendly nameplates",
+          name = "Show on friendly players",
+          desc = "Shows on friendly player nameplates",
           type = "toggle",
           width = "full",
           order = 5,
@@ -107,8 +107,8 @@ local AceConfig = {
           end,
         },
         showOnEnemies = {
-          name = "Show on Enemies",
-          desc = "Shows on enemy nameplates",
+          name = "Show on enemy players",
+          desc = "Shows on enemy player nameplates",
           type = "toggle",
           width = "full",
           order = 6,

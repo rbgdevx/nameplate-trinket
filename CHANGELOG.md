@@ -1,6 +1,10 @@
 # Nameplate Trinket
 
-## [v2.1.11](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.11) (2024-01-14)
+## [v2.1.12](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.12) (2025-01-28)
+
+- Fixing visibility when in instances if test mode is still enabled
+
+## [v2.1.11](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.11) (2025-01-14)
 
 - Fixing visibility control for which zones you want this to show in
 - Reducing zone control down to pvp and world pvp since nameplate ui changes basically don't work in PVE nor would you need this addon for pve

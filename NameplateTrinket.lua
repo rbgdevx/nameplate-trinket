@@ -865,15 +865,10 @@ local function addNameplateIcons(nameplate, guid)
     hideLocation = hideOutside
   end
 
-  local hideDuringTestMode = NS.db.global.test
-  local hideIcons = hideDuringTestMode
-    or hideNPCs
-    or hideOnSelf
-    or hideDead
-    or hideAllies
-    or hideEnemies
-    or hideNonTargets
-    or hideLocation
+  local inInstance = IsInInstance()
+  local testMode = NS.db.global.test
+  local hideRules = hideNPCs or hideOnSelf or hideDead or hideAllies or hideEnemies or hideNonTargets or hideLocation
+  local hideIcons = inInstance and hideRules or (not inInstance and (testMode or hideRules))
 
   if hideIcons then
     if nameplate.nptIconFrame then
@@ -961,9 +956,10 @@ local function addNameplateTestIcons(nameplate, guid)
     hideLocation = hideOutside
   end
 
-  local hideOutsideTestMode = not NS.db.global.test
-  local hideIcons = hideOutsideTestMode
-    and (hideNPCs or hideOnSelf or hideDead or hideAllies or hideEnemies or hideNonTargets or hideLocation)
+  local inInstance = IsInInstance()
+  local testMode = NS.db.global.test
+  local hideRules = hideNPCs or hideOnSelf or hideDead or hideAllies or hideEnemies or hideNonTargets or hideLocation
+  local hideIcons = inInstance and true or (not inInstance and (not testMode or hideRules))
 
   if hideIcons then
     if nameplate.nptTestIconFrame then
@@ -1304,7 +1300,7 @@ end
 15. auraType: string
 --]]
 function NameplateTrinket:COMBAT_LOG_EVENT_UNFILTERED()
-  if NS.db.global.test then
+  if NS.db.global.test and not IsInInstance() then
     return
   end
   if not NS.db.global.instanceTypes.arena and NameplateTrinketFrame.instanceType == "arena" then
