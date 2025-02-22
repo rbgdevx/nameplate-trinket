@@ -133,74 +133,17 @@ local HEALER_SPECS = {
   ["Discipline Priest"] = 256,
   ["Preservation Evoker"] = 1468,
 }
-local HEALER_SPELL_EVENTS = {
-  ["SPELL_HEAL"] = true,
-  ["SPELL_AURA_APPLIED"] = true,
-  ["SPELL_CAST_START"] = true,
-  ["SPELL_CAST_SUCCESS"] = true,
-  ["SPELL_EMPOWER_START"] = true,
-  ["SPELL_EMPOWER_END"] = true,
-  ["SPELL_PERIODIC_HEAL"] = true,
-}
-local HEALER_SPELLS = {
-  -- Holy Priest
-  [2060] = "PRIEST", -- Heal
-  [14914] = "PRIEST", -- Holy Fire
-  [596] = "PRIEST", -- Prayer of Healing
-  [204883] = "PRIEST", -- Circle of Healing
-  [289666] = "PRIEST", -- Greater Heal
-  -- Discipline Priest
-  [47540] = "PRIEST", -- Penance
-  [194509] = "PRIEST", -- Power Word: Radiance
-  [214621] = "PRIEST", -- Schism
-  [129250] = "PRIEST", -- Power Word: Solace
-  [204197] = "PRIEST", -- Purge of the Wicked
-  [314867] = "PRIEST", -- Shadow Covenant
-  -- Druid
-  [102351] = "DRUID", -- Cenarion Ward
-  [33763] = "DRUID", -- Nourish
-  [81262] = "DRUID", -- Efflorescence
-  [391888] = "DRUID", -- Adaptive Swarm -- Shared with Feral
-  [392160] = "DRUID", -- Invigorate
-  -- Shaman
-  [61295] = "SHAMAN", -- Riptide
-  [77472] = "SHAMAN", -- Healing Wave
-  [73920] = "SHAMAN", -- Healing Rain
-  [73685] = "SHAMAN", -- Unleash Life
-  [207778] = "SHAMAN", -- Downpour
-  -- Paladin
-  [275773] = "PALADIN", -- Judgment
-  [20473] = "PALADIN", -- Holy Shock
-  [82326] = "PALADIN", -- Holy Light
-  [85222] = "PALADIN", -- Light of Dawn
-  [223306] = "PALADIN", -- Bestow Faith
-  [214202] = "PALADIN", -- Rule of Law
-  [210294] = "PALADIN", -- Divine Favor
-  [114165] = "PALADIN", -- Holy Prism
-  [148039] = "PALADIN", -- Barrier of Faith
-  -- Monk
-  [124682] = "MONK", -- Enveloping Mist
-  [191837] = "MONK", -- Essence Font
-  [115151] = "MONK", -- Renewing Mist
-  [116680] = "MONK", -- Thunder Focus Tea
-  [124081] = "MONK", -- Zen Pulse
-  [209584] = "MONK", -- Zen Focus Tea
-  [205234] = "MONK", -- Healing Sphere
-  -- Evoker - Preservation
-  [364343] = "EVOKER", -- Echo
-  [382614] = "EVOKER", -- Dream Breath
-  [366155] = "EVOKER", -- Reversion
-  [382731] = "EVOKER", -- Spiritbloom
-  [373861] = "EVOKER", -- Temporal Anomaly
-}
 
-local function GetUnitFrame(nameplate)
-  return nameplate.UnitFrame
-end
-
-local function GetHealthBarFrame(nameplate)
-  local UnitFrame = GetUnitFrame(nameplate)
-  return UnitFrame.HealthBarsContainer
+local function GetAnchorFrame(nameplate)
+  if Plater and nameplate.unitFrame.PlaterOnScreen then
+    return nameplate.unitFrame.HealthBarsContainer
+  elseif nameplate.kui and nameplate.kui.bg and nameplate.kui:IsShown() then
+    return KuiNameplatesPlayerAnchor
+  elseif ElvUIPlayerNamePlateAnchor then
+    return ElvUIPlayerNamePlateAnchor
+  else
+    return nameplate.UnitFrame.HealthBarsContainer
+  end
 end
 
 local function checkIsHealer(nameplate, guid)
@@ -851,7 +794,7 @@ local function addNameplateIcons(nameplate, guid)
   local hideAllies = not NS.db.global.showOnAllies and isFriend
   local hideEnemies = not NS.db.global.showOnEnemies and isEnemy
   local hideOnSelf = not NS.db.global.showSelf and isSelf
-  local hideNPCs = isNpc
+  local hideNPCs = not NS.db.global.testNPCs and isNpc
 
   local hideOutsideArena = not NS.db.global.instanceTypes.arena and isArena
   local hideOutsideBattleground = not NS.db.global.instanceTypes.pvp and isBattleground
@@ -883,7 +826,7 @@ local function addNameplateIcons(nameplate, guid)
     nameplate.nptIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
     nameplate.nptIconFrame:SetWidth(NS.db.global.iconSize)
     nameplate.nptIconFrame:SetHeight(NS.db.global.iconSize)
-    local anchorFrame = GetHealthBarFrame(nameplate)
+    local anchorFrame = GetAnchorFrame(nameplate)
     -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
     nameplate.nptIconFrame:ClearAllPoints()
     nameplate.nptIconFrame:SetPoint(NS.db.global.anchor, anchorFrame, NS.db.global.anchorTo, NS.OFFSET.x, NS.OFFSET.y)
@@ -896,7 +839,7 @@ local function addNameplateIcons(nameplate, guid)
   nameplate.nptIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
   nameplate.nptIconFrame:SetWidth(NS.db.global.iconSize)
   nameplate.nptIconFrame:SetHeight(NS.db.global.iconSize)
-  local anchorFrame = GetHealthBarFrame(nameplate)
+  local anchorFrame = GetAnchorFrame(nameplate)
   -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
   nameplate.nptIconFrame:ClearAllPoints()
   nameplate.nptIconFrame:SetPoint(NS.db.global.anchor, anchorFrame, NS.db.global.anchorTo, NS.OFFSET.x, NS.OFFSET.y)
@@ -942,7 +885,7 @@ local function addNameplateTestIcons(nameplate, guid)
   local hideAllies = not NS.db.global.showOnAllies and isFriend
   local hideEnemies = not NS.db.global.showOnEnemies and isEnemy
   local hideOnSelf = not NS.db.global.showSelf and isSelf
-  local hideNPCs = isNpc
+  local hideNPCs = not NS.db.global.testNPCs and isNpc
 
   local hideOutsideArena = not NS.db.global.instanceTypes.arena and isArena
   local hideOutsideBattleground = not NS.db.global.instanceTypes.pvp and isBattleground
@@ -975,7 +918,7 @@ local function addNameplateTestIcons(nameplate, guid)
     nameplate.nptTestIconFrame:SetWidth(NS.db.global.iconSize)
     nameplate.nptTestIconFrame:SetHeight(NS.db.global.iconSize)
     nameplate.nptTestIconFrame:SetScale(1)
-    local anchorFrame = GetHealthBarFrame(nameplate)
+    local anchorFrame = GetAnchorFrame(nameplate)
     -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
     nameplate.nptTestIconFrame:ClearAllPoints()
     nameplate.nptTestIconFrame:SetPoint(
@@ -993,7 +936,7 @@ local function addNameplateTestIcons(nameplate, guid)
   nameplate.nptTestIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
   nameplate.nptTestIconFrame:SetWidth(NS.db.global.iconSize)
   nameplate.nptTestIconFrame:SetHeight(NS.db.global.iconSize)
-  local anchorFrame = GetHealthBarFrame(nameplate)
+  local anchorFrame = GetAnchorFrame(nameplate)
   -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
   nameplate.nptTestIconFrame:ClearAllPoints()
   nameplate.nptTestIconFrame:SetPoint(NS.db.global.anchor, anchorFrame, NS.db.global.anchorTo, NS.OFFSET.x, NS.OFFSET.y)
@@ -1104,7 +1047,7 @@ function ReallocateIcons(clearSpells)
     if nameplate and nameplate.UnitFrame and nameplate.nptIconFrame then
       nameplate.nptIconFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
       nameplate.nptIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
-      local anchorFrame = GetHealthBarFrame(nameplate)
+      local anchorFrame = GetAnchorFrame(nameplate)
       nameplate.nptIconFrame:ClearAllPoints()
       nameplate.nptIconFrame:SetPoint(NS.db.global.anchor, anchorFrame, NS.db.global.anchorTo, NS.OFFSET.x, NS.OFFSET.y)
       local counter = 0
@@ -1151,7 +1094,7 @@ function ReallocateTestIcons(clearSpells)
     if nameplate and nameplate.UnitFrame and nameplate.nptTestIconFrame then
       nameplate.nptTestIconFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
       nameplate.nptTestIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
-      local anchorFrame = GetHealthBarFrame(nameplate)
+      local anchorFrame = GetAnchorFrame(nameplate)
       nameplate.nptTestIconFrame:ClearAllPoints()
       nameplate.nptTestIconFrame:SetPoint(
         NS.db.global.anchor,
@@ -1225,7 +1168,7 @@ function NameplateTrinket:attachToNameplate(nameplate, guid)
   end
 
   if not nameplate.rbgdAnchorFrame then
-    local attachmentFrame = GetHealthBarFrame(nameplate)
+    local attachmentFrame = GetAnchorFrame(nameplate)
     nameplate.rbgdAnchorFrame = CreateFrame("Frame", nil, attachmentFrame)
     nameplate.rbgdAnchorFrame:SetFrameStrata("HIGH")
     nameplate.rbgdAnchorFrame:SetFrameLevel(attachmentFrame:GetFrameLevel() + 1)
@@ -1345,11 +1288,6 @@ function NameplateTrinket:COMBAT_LOG_EVENT_UNFILTERED()
   end
   local spellId = select(12, CombatLogGetCurrentEventInfo())
   if spellId then
-    if HEALER_SPELL_EVENTS[subevent] and HEALER_SPELLS[spellId] then
-      if not Healers[sourceGUID] then
-        Healers[sourceGUID] = true
-      end
-    end
     if bband(sourceFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) ~= 0 or (NS.db.global.showOnAllies == true) then
       local entry = NS.db.spells[spellId]
       if entry ~= nil and entry.enabled then

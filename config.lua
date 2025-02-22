@@ -45,6 +45,7 @@ NS.INSTANCE_TYPES = {
 
 ---@class GlobalTable
 ---@field test boolean
+---@field testNPCs boolean
 ---@field anchor string
 ---@field anchorTo string
 ---@field growDirection "left" | "right"
@@ -114,6 +115,7 @@ local DefaultDatabase = {
   migrated = false,
   global = {
     test = false,
+    testNPCs = false,
     anchor = "BOTTOMLEFT",
     anchorTo = "TOPRIGHT",
     growDirection = "right",

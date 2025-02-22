@@ -1,5 +1,12 @@
 # Nameplate Trinket
 
+## [v2.1.13](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.13) (2025-02-22)
+
+- Adding the ability to test on NPC nameplates
+- Updating settings visuals and placements
+- Adding support for Plater, KUI, and ElvUI
+- Removing combat log healer check
+
 ## [v2.1.12](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.12) (2025-01-28)
 
 - Fixing visibility when in instances if test mode is still enabled
