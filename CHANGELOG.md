@@ -1,5 +1,10 @@
 # Nameplate Trinket
 
+## [v2.1.14](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.14) (2025-03-14)
+
+- Fixing support for Plater
+- Update toc
+
 ## [v2.1.13](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.13) (2025-02-22)
 
 - Adding the ability to test on NPC nameplates
