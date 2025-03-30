@@ -141,6 +141,8 @@ local function GetAnchorFrame(nameplate)
     return KuiNameplatesPlayerAnchor
   elseif ElvUIPlayerNamePlateAnchor then
     return ElvUIPlayerNamePlateAnchor
+  elseif TidyPlates and nameplate.extended then
+    return nameplate.extended.visual.healthbar
   else
     return nameplate.UnitFrame.HealthBarsContainer
   end
@@ -1206,6 +1208,10 @@ function NameplateTrinket:NAME_PLATE_UNIT_REMOVED(unitToken)
   end
 end
 
+function NameplateTrinket:NAME_PLATE_CREATED(namePlateFrame)
+  -- print("NAME_PLATE_CREATED", namePlateFrame)
+end
+
 -- UnitIsPlayer takes unitToken
 -- C_PlayerInfo.GUIDIsPlayer takes unitGUID
 function NameplateTrinket:NAME_PLATE_UNIT_ADDED(unitToken)
@@ -1607,6 +1613,7 @@ function NameplateTrinket:PLAYER_ENTERING_WORLD()
       end
     end)
 
+    NameplateTrinketFrame:RegisterEvent("NAME_PLATE_CREATED")
     NameplateTrinketFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
     NameplateTrinketFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
     NameplateTrinketFrame:RegisterEvent("ARENA_OPPONENT_UPDATE")
