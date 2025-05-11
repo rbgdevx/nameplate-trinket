@@ -1,5 +1,13 @@
 # Nameplate Trinket
 
+## [v2.1.16](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.16) (2025-05-11)
+
+- Fixing cooldown frame text bug
+- Adjusting cooldown frame swipe opacity
+- Adjusting cooldown text logic
+- Assigning addon to my own category for organization
+- Update toc
+
 ## [v2.1.15](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.15) (2025-03-30)
 
 - Adding support for Tidyplates nameplates

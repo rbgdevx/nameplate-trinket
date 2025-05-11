@@ -11,7 +11,7 @@ local next = next
 local setmetatable = setmetatable
 local getmetatable = getmetatable
 
-local twipe = table.wipe
+-- local twipe = table.wipe
 local sgsub = string.gsub
 local slen = string.len
 

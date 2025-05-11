@@ -535,6 +535,9 @@ function CreateIcon(nameplate, spellId, index)
   icon.cooldownFrame = CreateFrame("Cooldown", nil, iconFrame, "CooldownFrameTemplate")
   icon.cooldownFrame:SetAllPoints(iconFrame)
   icon.cooldownFrame:SetReverse(true)
+  icon.cooldownFrame:SetHideCountdownNumbers(true)
+  icon.cooldownFrame:SetDrawSwipe(true)
+  icon.cooldownFrame:SetSwipeColor(0, 0, 0, 0.6)
 
   icon.texture = iconFrame:CreateTexture(nil, "BORDER")
   icon.texture:SetAllPoints(iconFrame)
@@ -546,10 +549,12 @@ function CreateIcon(nameplate, spellId, index)
   icon.border:SetVertexColor(1, 0.35, 0)
   icon.border:Hide()
 
-  local loadedOrLoading, loaded = IsAddOnLoaded("OmniCC")
-  if not loaded and not loadedOrLoading then
-    icon.cooldownFrame:SetHideCountdownNumbers(true)
+  icon.cooldownText = nil
 
+  local loadedOrLoading, loaded = IsAddOnLoaded("OmniCC")
+  if loaded or loadedOrLoading then
+    icon.cooldownText = nil
+  else
     local fontScale = 1
     local timerScale = NS.db.global.iconSize - NS.db.global.iconSize / 2
     local timerTextSize = mceil(timerScale)
@@ -563,8 +568,6 @@ function CreateIcon(nameplate, spellId, index)
     else
       icon.cooldownText:SetFont("Fonts\\FRIZQT__.TTF", timerTextSize, "OUTLINE")
     end
-  else
-    icon.cooldownText = nil
   end
 
   nameplate.nptIconCount = nameplate.nptIconCount + 1
@@ -592,6 +595,9 @@ function CreateTestIcon(nameplate, spellId, index)
   icon.cooldownFrame = CreateFrame("Cooldown", nil, iconFrame, "CooldownFrameTemplate")
   icon.cooldownFrame:SetAllPoints(iconFrame)
   icon.cooldownFrame:SetReverse(true)
+  icon.cooldownFrame:SetHideCountdownNumbers(true)
+  icon.cooldownFrame:SetDrawSwipe(true)
+  icon.cooldownFrame:SetSwipeColor(0, 0, 0, 0.6)
 
   icon.texture = iconFrame:CreateTexture(nil, "BORDER")
   icon.texture:SetAllPoints(iconFrame)
@@ -604,9 +610,9 @@ function CreateTestIcon(nameplate, spellId, index)
   icon.border:Hide()
 
   local loadedOrLoading, loaded = IsAddOnLoaded("OmniCC")
-  if not loaded and not loadedOrLoading then
-    icon.cooldownFrame:SetHideCountdownNumbers(true)
-
+  if loaded or loadedOrLoading then
+    icon.cooldownText = nil
+  else
     local fontScale = 1
     local timerScale = NS.db.global.iconSize - NS.db.global.iconSize / 2
     local timerTextSize = mceil(timerScale)
@@ -620,8 +626,6 @@ function CreateTestIcon(nameplate, spellId, index)
     else
       icon.cooldownText:SetFont("Fonts\\FRIZQT__.TTF", timerTextSize, "OUTLINE")
     end
-  else
-    icon.cooldownText = nil
   end
 
   nameplate.nptTestIconCount = nameplate.nptTestIconCount + 1
