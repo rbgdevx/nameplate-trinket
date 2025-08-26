@@ -1,37 +1,5 @@
 {
   "Lua.runtime.version": "Lua 5.1",
-  "Lua.diagnostics.globals": [
-    "COMBATLOG_OBJECT_TYPE_PLAYER",
-    "COMBATLOG_OBJECT_REACTION_HOSTILE",
-    "SlashCmdList",
-    "TooltipDataProcessor",
-    "AuraUtil",
-    "GameTooltip",
-    "COMBATLOG_OBJECT_CONTROL_PLAYER",
-    "SELECTED_CHAT_FRAME",
-    "DEFAULT_CHAT_FRAME",
-    "UIParent",
-    "NORMAL_FONT_COLOR",
-    "GameFontNormal",
-    "GameFontHighlight",
-    "ACCEPT",
-    "CANCEL",
-    "Settings",
-    "GameFontHighlightLarge",
-    "GameFontHighlightSmall",
-    "CLOSE",
-    "GameFontDisableSmall",
-    "GameFontNormalSmall",
-    "FONT_COLOR_CODE_CLOSE",
-    "SetDesaturation",
-    "WOW_PROJECT_ID",
-    "WOW_PROJECT_MAINLINE",
-    "ColorPickerFrame",
-    "ChatFontNormal",
-    "OKAY",
-    "NOT_BOUND",
-    "CopyTable"
-  ],
   "Lua.runtime.builtin": {
     "basic": "disable",
     "debug": "disable",
@@ -44,6 +12,22 @@
     "utf8": "disable"
   },
   "Lua.workspace.library": [
-    "c:\\Users\\17186\\.cursor\\extensions\\ketho.wow-api-0.19.1\\Annotations"
+    "c:\\Users\\17186\\.cursor\\extensions\\ketho.wow-api-0.20.7\\Annotations\\Core"
+  ],
+  "Lua.diagnostics.globals": [
+    "COMBATLOG_OBJECT_TYPE_PLAYER",
+    "COMBATLOG_OBJECT_REACTION_HOSTILE",
+    "SlashCmdList",
+    "TooltipDataProcessor",
+    "COMBATLOG_OBJECT_CONTROL_PLAYER",
+    "SELECTED_CHAT_FRAME",
+    "DEFAULT_CHAT_FRAME",
+    "ACCEPT",
+    "CANCEL",
+    "Settings",
+    "CLOSE",
+    "FONT_COLOR_CODE_CLOSE",
+    "OKAY",
+    "NOT_BOUND"
   ]
 }

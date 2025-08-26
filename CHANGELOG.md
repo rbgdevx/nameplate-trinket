@@ -1,5 +1,11 @@
 # Nameplate Trinket
 
+## [v2.1.17](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.17) (2025-08-26)
+
+- Fixing nameplate anchors for third party nameplate addons
+- New nameplate anchor setting
+- Update toc
+
 ## [v2.1.16](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.16) (2025-05-11)
 
 - Fixing cooldown frame text bug

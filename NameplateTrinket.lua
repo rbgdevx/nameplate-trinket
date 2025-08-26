@@ -135,16 +135,24 @@ local HEALER_SPECS = {
 }
 
 local function GetAnchorFrame(nameplate)
-  if Plater and nameplate.unitFrame.PlaterOnScreen then
-    return nameplate.unitFrame.healthBar
-  elseif nameplate.kui and nameplate.kui.bg and nameplate.kui:IsShown() then
-    return KuiNameplatesPlayerAnchor
-  elseif ElvUIPlayerNamePlateAnchor then
-    return ElvUIPlayerNamePlateAnchor
-  elseif TidyPlates and nameplate.extended then
-    return nameplate.extended.visual.healthbar
+  if nameplate.UnitFrame then
+    if nameplate.UnitFrame.HealthBarsContainer then
+      return nameplate.UnitFrame.HealthBarsContainer
+    elseif nameplate.UnitFrame.healthBar then
+      return nameplate.UnitFrame.healthBar
+    else
+      return nameplate.UnitFrame
+    end
+  elseif nameplate.unitFrame then
+    if nameplate.unitFrame.HealthBarsContainer then
+      return nameplate.unitFrame.HealthBarsContainer
+    elseif nameplate.unitFrame.Health then
+      return nameplate.unitFrame.Health
+    else
+      return nameplate.unitFrame
+    end
   else
-    return nameplate.UnitFrame.HealthBarsContainer
+    return nameplate
   end
 end
 
@@ -832,7 +840,7 @@ local function addNameplateIcons(nameplate, guid)
     nameplate.nptIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
     nameplate.nptIconFrame:SetWidth(NS.db.global.iconSize)
     nameplate.nptIconFrame:SetHeight(NS.db.global.iconSize)
-    local anchorFrame = GetAnchorFrame(nameplate)
+    local anchorFrame = NS.db.global.attachToHealthBar and GetAnchorFrame(nameplate) or nameplate
     -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
     nameplate.nptIconFrame:ClearAllPoints()
     nameplate.nptIconFrame:SetPoint(NS.db.global.anchor, anchorFrame, NS.db.global.anchorTo, NS.OFFSET.x, NS.OFFSET.y)
@@ -845,7 +853,7 @@ local function addNameplateIcons(nameplate, guid)
   nameplate.nptIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
   nameplate.nptIconFrame:SetWidth(NS.db.global.iconSize)
   nameplate.nptIconFrame:SetHeight(NS.db.global.iconSize)
-  local anchorFrame = GetAnchorFrame(nameplate)
+  local anchorFrame = NS.db.global.attachToHealthBar and GetAnchorFrame(nameplate) or nameplate
   -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
   nameplate.nptIconFrame:ClearAllPoints()
   nameplate.nptIconFrame:SetPoint(NS.db.global.anchor, anchorFrame, NS.db.global.anchorTo, NS.OFFSET.x, NS.OFFSET.y)
@@ -924,7 +932,7 @@ local function addNameplateTestIcons(nameplate, guid)
     nameplate.nptTestIconFrame:SetWidth(NS.db.global.iconSize)
     nameplate.nptTestIconFrame:SetHeight(NS.db.global.iconSize)
     nameplate.nptTestIconFrame:SetScale(1)
-    local anchorFrame = GetAnchorFrame(nameplate)
+    local anchorFrame = NS.db.global.attachToHealthBar and GetAnchorFrame(nameplate) or nameplate
     -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
     nameplate.nptTestIconFrame:ClearAllPoints()
     nameplate.nptTestIconFrame:SetPoint(
@@ -942,7 +950,7 @@ local function addNameplateTestIcons(nameplate, guid)
   nameplate.nptTestIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
   nameplate.nptTestIconFrame:SetWidth(NS.db.global.iconSize)
   nameplate.nptTestIconFrame:SetHeight(NS.db.global.iconSize)
-  local anchorFrame = GetAnchorFrame(nameplate)
+  local anchorFrame = NS.db.global.attachToHealthBar and GetAnchorFrame(nameplate) or nameplate
   -- Anchor -- Frame -- To Frame's -- offsetsX -- offsetsY
   nameplate.nptTestIconFrame:ClearAllPoints()
   nameplate.nptTestIconFrame:SetPoint(NS.db.global.anchor, anchorFrame, NS.db.global.anchorTo, NS.OFFSET.x, NS.OFFSET.y)
@@ -1053,7 +1061,7 @@ function ReallocateIcons(clearSpells)
     if nameplate and nameplate.UnitFrame and nameplate.nptIconFrame then
       nameplate.nptIconFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
       nameplate.nptIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
-      local anchorFrame = GetAnchorFrame(nameplate)
+      local anchorFrame = NS.db.global.attachToHealthBar and GetAnchorFrame(nameplate) or nameplate
       nameplate.nptIconFrame:ClearAllPoints()
       nameplate.nptIconFrame:SetPoint(NS.db.global.anchor, anchorFrame, NS.db.global.anchorTo, NS.OFFSET.x, NS.OFFSET.y)
       local counter = 0
@@ -1100,7 +1108,7 @@ function ReallocateTestIcons(clearSpells)
     if nameplate and nameplate.UnitFrame and nameplate.nptTestIconFrame then
       nameplate.nptTestIconFrame:SetIgnoreParentAlpha(NS.db.global.ignoreNameplateAlpha)
       nameplate.nptTestIconFrame:SetIgnoreParentScale(NS.db.global.ignoreNameplateScale)
-      local anchorFrame = GetAnchorFrame(nameplate)
+      local anchorFrame = NS.db.global.attachToHealthBar and GetAnchorFrame(nameplate) or nameplate
       nameplate.nptTestIconFrame:ClearAllPoints()
       nameplate.nptTestIconFrame:SetPoint(
         NS.db.global.anchor,

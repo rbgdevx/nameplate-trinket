@@ -31,7 +31,7 @@ local AceConfig = {
           name = "Enable test mode",
           desc = "Only works outside of an instance.",
           type = "toggle",
-          width = 0.85,
+          width = 0.9,
           order = 1,
           set = function(_, val)
             if val then
@@ -98,7 +98,7 @@ local AceConfig = {
           name = "Show on Self",
           desc = "Show on your nameplate",
           type = "toggle",
-          width = "full",
+          width = 0.9,
           order = 7,
           set = function(_, val)
             NS.db.global.showSelf = val
@@ -112,7 +112,7 @@ local AceConfig = {
           name = "Show on friendly players",
           desc = "Shows on friendly player nameplates",
           type = "toggle",
-          width = "full",
+          width = 1.2,
           order = 8,
           set = function(_, val)
             NS.db.global.showOnAllies = val
@@ -126,7 +126,7 @@ local AceConfig = {
           name = "Show on enemy players",
           desc = "Shows on enemy player nameplates",
           type = "toggle",
-          width = "full",
+          width = 1.2,
           order = 9,
           set = function(_, val)
             NS.db.global.showOnEnemies = val
@@ -136,12 +136,13 @@ local AceConfig = {
             return NS.db.global.showOnEnemies
           end,
         },
+        spacing3 = { type = "description", order = 10, name = "" },
         enableGlow = {
           name = "Enable Glow on Trinkets",
           desc = "Shows a yellow glow around trinket icons.",
           type = "toggle",
-          width = "full",
-          order = 10,
+          width = 1.2,
+          order = 11,
           set = function(_, val)
             NS.db.global.enableGlow = val
             NS.OnDbChanged()
@@ -150,18 +151,31 @@ local AceConfig = {
             return NS.db.global.enableGlow
           end,
         },
-        spacing3 = { type = "description", order = 11, name = "" },
+        attachToHealthBar = {
+          name = "Attach directly to the healthbar",
+          type = "toggle",
+          order = 12,
+          width = 1.5,
+          get = function(_)
+            return NS.db.global.attachToHealthBar
+          end,
+          set = function(_, val)
+            NS.db.global.attachToHealthBar = val
+            NS.OnDbChanged()
+          end,
+        },
+        spacing4 = { type = "description", order = 13, name = "" },
         desc1 = {
           type = "description",
-          order = 12,
+          order = 14,
           name = "Manage how nameplate scale and alpha effect icons:",
         },
         ignoreNameplateAlpha = {
           name = "Ignore Nameplate Alpha",
           desc = "Turning this off keeps the icons fully visible even when the nameplate fades out.",
           type = "toggle",
-          width = 1.1,
-          order = 13,
+          width = 1.2,
+          order = 15,
           set = function(_, val)
             NS.db.global.ignoreNameplateAlpha = val
             NS.OnDbChanged()
@@ -175,7 +189,7 @@ local AceConfig = {
           desc = "Turning this off keeps the icons at the size you set even when the nameplate gets bigger or smaller.",
           type = "toggle",
           width = 1.1,
-          order = 14,
+          order = 16,
           set = function(_, val)
             NS.db.global.ignoreNameplateScale = val
             NS.OnDbChanged()
@@ -188,7 +202,7 @@ local AceConfig = {
           name = "Choose what content icons should show in:",
           type = "group",
           inline = true,
-          order = 15,
+          order = 17,
           args = {
             arena = {
               name = "Arena",
@@ -236,7 +250,7 @@ local AceConfig = {
           desc = "Set what order the icons should display in.",
           type = "select",
           width = "normal",
-          order = 16,
+          order = 18,
           values = {
             [NS.SORT_MODE_NONE] = "None",
             [NS.SORT_MODE_TRINKET_INTERRUPT_OTHER] = "Trinket > Interrupt > Other",
@@ -259,12 +273,12 @@ local AceConfig = {
             return NS.db.global.sortOrder
           end,
         },
-        spacing5 = { type = "description", order = 17, name = " " },
+        spacing5 = { type = "description", order = 19, name = " " },
         iconAlpha = {
           name = "Icon Alpha",
           type = "range",
           width = "normal",
-          order = 18,
+          order = 20,
           isPercent = false,
           min = 0,
           max = 1,
@@ -281,7 +295,7 @@ local AceConfig = {
           name = "Icon Size",
           type = "range",
           width = "normal",
-          order = 19,
+          order = 21,
           isPercent = false,
           min = 12,
           max = 64,
@@ -299,7 +313,7 @@ local AceConfig = {
           desc = "Spacing between each icon",
           type = "range",
           width = "normal",
-          order = 20,
+          order = 22,
           isPercent = false,
           min = 0,
           max = 25,
@@ -312,12 +326,12 @@ local AceConfig = {
             return NS.db.global.iconSpacing
           end,
         },
-        spacing6 = { type = "description", order = 21, name = " " },
+        spacing6 = { type = "description", order = 23, name = " " },
         anchor = {
           name = "Anchor",
           type = "select",
           width = "normal",
-          order = 22,
+          order = 24,
           values = {
             ["TOP"] = "Top",
             ["BOTTOM"] = "Bottom",
@@ -352,7 +366,7 @@ local AceConfig = {
           name = "Anchor To",
           type = "select",
           width = "normal",
-          order = 23,
+          order = 25,
           values = {
             ["TOP"] = "Top",
             ["BOTTOM"] = "Bottom",
@@ -388,7 +402,7 @@ local AceConfig = {
           desc = "The direction the icons will output",
           type = "select",
           width = "normal",
-          order = 24,
+          order = 26,
           values = {
             [NS.ICON_GROW_DIRECTION_LEFT] = "Left",
             [NS.ICON_GROW_DIRECTION_RIGHT] = "Right",
@@ -401,13 +415,13 @@ local AceConfig = {
             return NS.db.global.growDirection
           end,
         },
-        spacing7 = { type = "description", order = 25, name = " " },
+        spacing7 = { type = "description", order = 27, name = " " },
         offsetX = {
           name = "Offset X",
           desc = "Offset left/right from the anchor point",
           type = "range",
           width = "normal",
-          order = 26,
+          order = 28,
           isPercent = false,
           min = -250,
           max = 250,
@@ -427,7 +441,7 @@ local AceConfig = {
           desc = "Offset top/bottom from the anchor point",
           type = "range",
           width = "normal",
-          order = 27,
+          order = 29,
           isPercent = false,
           min = -250,
           max = 250,
@@ -442,7 +456,7 @@ local AceConfig = {
             return NS.db.global.offsetY
           end,
         },
-        spacing8 = { type = "description", order = 28, name = " " },
+        spacing8 = { type = "description", order = 30, name = " " },
         reset = {
           name = "Reset Everything",
           type = "execute",

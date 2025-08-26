@@ -49,6 +49,7 @@ NS.INSTANCE_TYPES = {
 ---@field anchor string
 ---@field anchorTo string
 ---@field growDirection "left" | "right"
+---@field attachToHealthBar boolean
 ---@field offsetX number
 ---@field offsetY number
 ---@field iconAlpha number
@@ -119,6 +120,7 @@ local DefaultDatabase = {
     anchor = "BOTTOMLEFT",
     anchorTo = "TOPRIGHT",
     growDirection = "right",
+    attachToHealthBar = true,
     offsetX = 1,
     offsetY = 1,
     iconAlpha = 1,
