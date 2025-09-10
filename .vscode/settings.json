@@ -28,6 +28,8 @@
     "CLOSE",
     "FONT_COLOR_CODE_CLOSE",
     "OKAY",
-    "NOT_BOUND"
+    "NOT_BOUND",
+    "SetDesaturation",
+    "ColorPickerFrame"
   ]
 }

@@ -1,6 +1,6 @@
 ## Interface: 110200
 ## Title: Nameplate Trinket
-## Version: 2.1.17
+## Version: 2.1.18
 ## Author: RBGDEV
 ## Notes: Tracks trinket and other cc breaking spells on nameplates
 ## SavedVariables: NameplateTrinketDB
