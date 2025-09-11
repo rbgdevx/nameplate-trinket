@@ -56,6 +56,9 @@ local AceConfig = {
           type = "toggle",
           width = 1.0,
           order = 2,
+          disabled = function(_)
+            return not NS.db.global.test
+          end,
           set = function(_, val)
             NS.db.global.testNPCs = val
             NS.OnDbChanged()

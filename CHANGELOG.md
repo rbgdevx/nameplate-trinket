@@ -1,5 +1,9 @@
 # Nameplate Trinket
 
+## [v2.1.19](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.19) (2025-09-10)
+
+- Disabling secondary testing option if primary testing is disabled
+
 ## [v2.1.18](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.18) (2025-09-10)
 
 - Fixing nameplate anchors for third party nameplate addons
