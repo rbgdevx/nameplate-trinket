@@ -1,5 +1,11 @@
 # Nameplate Trinket
 
+## [v2.2.0](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.2.0) (2026-01-06)
+
+- Updating toc
+- Updating settings
+- General cleanup
+
 ## [v2.1.19](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.1.19) (2025-09-10)
 
 - Disabling secondary testing option if primary testing is disabled

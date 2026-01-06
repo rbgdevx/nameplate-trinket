@@ -67,7 +67,7 @@ local AceConfig = {
             return NS.db.global.testNPCs
           end,
         },
-        spacing1 = { type = "description", order = 3, name = "" },
+        spacer1 = { name = "", type = "description", order = 3, width = "full" },
         trinketOnly = {
           name = "Track Trinket Only",
           desc = "Turning this off tracks other spells similar that prevent cc.",
@@ -96,7 +96,7 @@ local AceConfig = {
             return NS.db.global.targetOnly
           end,
         },
-        spacing2 = { type = "description", order = 6, name = "" },
+        spacer2 = { name = "", type = "description", order = 6, width = "full" },
         showSelf = {
           name = "Show on Self",
           desc = "Show on your nameplate",
@@ -139,7 +139,7 @@ local AceConfig = {
             return NS.db.global.showOnEnemies
           end,
         },
-        spacing3 = { type = "description", order = 10, name = "" },
+        spacer3 = { name = "", type = "description", order = 10, width = "full" },
         enableGlow = {
           name = "Enable Glow on Trinkets",
           desc = "Shows a yellow glow around trinket icons.",
@@ -167,7 +167,7 @@ local AceConfig = {
             NS.OnDbChanged()
           end,
         },
-        spacing4 = { type = "description", order = 13, name = "" },
+        spacer4 = { name = "", type = "description", order = 13, width = "full" },
         desc1 = {
           type = "description",
           order = 14,
@@ -276,7 +276,7 @@ local AceConfig = {
             return NS.db.global.sortOrder
           end,
         },
-        spacing5 = { type = "description", order = 19, name = " " },
+        spacer5 = { name = " ", type = "description", order = 19, width = "full" },
         iconAlpha = {
           name = "Icon Alpha",
           type = "range",
@@ -329,7 +329,7 @@ local AceConfig = {
             return NS.db.global.iconSpacing
           end,
         },
-        spacing6 = { type = "description", order = 23, name = " " },
+        spacer6 = { name = " ", type = "description", order = 23, width = "full" },
         anchor = {
           name = "Anchor",
           type = "select",
@@ -418,7 +418,7 @@ local AceConfig = {
             return NS.db.global.growDirection
           end,
         },
-        spacing7 = { type = "description", order = 27, name = " " },
+        spacer7 = { name = " ", type = "description", order = 27, width = "full" },
         offsetX = {
           name = "Offset X",
           desc = "Offset left/right from the anchor point",
@@ -459,7 +459,7 @@ local AceConfig = {
             return NS.db.global.offsetY
           end,
         },
-        spacing8 = { type = "description", order = 30, name = " " },
+        spacer8 = { name = " ", type = "description", order = 30, width = "full" },
         reset = {
           name = "Reset Everything",
           type = "execute",
@@ -686,22 +686,17 @@ NS.MakeOption = function(spellId, spellInfo, index)
         end,
       },
       spellIdError = {
-        order = 4,
-        type = "description",
         name = "",
+        type = "description",
         width = "normal",
+        order = 4,
       },
-      spacer2 = {
-        order = 5,
-        type = "description",
-        name = "",
-        width = "full",
-      },
+      spacer2 = { name = "", type = "description", order = 5, width = "full" },
       cooldown = {
-        order = 6,
-        type = "input",
         name = "Cooldown",
         desc = "Cooldown time in seconds",
+        type = "input",
+        order = 6,
         get = function(info)
           return NS.db[info[1]][tonumber(info[2])] and tostring(NS.db[info[1]][tonumber(info[2])][info[3]])
             or tostring(spellCooldown)
@@ -747,12 +742,7 @@ NS.MakeOption = function(spellId, spellInfo, index)
         name = spellCooldown <= 0 and "|cFFFF0000" .. " Must be greater than 0" or "",
         width = "normal",
       },
-      spacer3 = {
-        order = 8,
-        type = "description",
-        name = "",
-        width = "full",
-      },
+      spacer3 = { order = 8, type = "description", name = "", width = "full" },
       spellIcon = {
         order = 9,
         type = "input",
@@ -807,12 +797,7 @@ NS.MakeOption = function(spellId, spellInfo, index)
         name = "",
         width = "normal",
       },
-      spacer4 = {
-        order = 11,
-        type = "description",
-        name = "",
-        width = "full",
-      },
+      spacer4 = { order = 11, type = "description", name = "", width = "full" },
       spellImage = {
         order = 12,
         type = "description",
@@ -823,12 +808,7 @@ NS.MakeOption = function(spellId, spellInfo, index)
         imageHeight = 100,
         imageWidth = 100,
       },
-      spacer5 = {
-        order = 13,
-        type = "description",
-        name = "",
-        width = "full",
-      },
+      spacer5 = { order = 13, type = "description", name = "", width = "full" },
       removeSpell = {
         name = "Remove",
         type = "execute",
