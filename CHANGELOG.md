@@ -1,5 +1,9 @@
 # Nameplate Trinket
 
+## [v2.2.1](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.2.1) (2026-01-07)
+
+- Adding logo
+
 ## [v2.2.0](https://github.com/rbgdevx/nameplate-trinket/releases/tag/v2.2.0) (2026-01-06)
 
 - Updating toc

@@ -1,8 +1,9 @@
 ## Interface: 110207
 ## Title: Nameplate Trinket
-## Version: 2.2.0
+## Version: 2.2.1
 ## Author: RBGDEV
 ## Notes: Tracks trinket and other cc breaking spells on nameplates
+## IconTexture: Interface/AddOns/NameplateTrinket/logo.tga
 ## SavedVariables: NameplateTrinketDB
 ## Category: RBGDEV
 ## X-Category: Buffs, Combat, Battlegrounds/PvP
